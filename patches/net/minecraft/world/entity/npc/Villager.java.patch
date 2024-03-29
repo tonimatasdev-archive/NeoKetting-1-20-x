@@ -1,5 +1,31 @@
 --- a/net/minecraft/world/entity/npc/Villager.java
 +++ b/net/minecraft/world/entity/npc/Villager.java
+@@ -269,6 +_,17 @@
+         return this.assignProfessionWhenSpawned;
+     }
+ 
++    // Spigot Start
++    @Override
++    public void inactiveTick() {
++        // SPIGOT-3874, SPIGOT-3894, SPIGOT-3846, SPIGOT-5286 :(
++        if (this.level().spigotConfig.tickInactiveVillagers && this.isEffectiveAi()) {
++            this.customServerAiStep();
++        }
++        super.inactiveTick();
++    }
++    // Spigot End
++
+     @Override
+     protected void customServerAiStep() {
+         this.level().getProfiler().push("villagerBrain");
+@@ -286,6 +_,7 @@
+                     this.increaseProfessionLevelOnUpdate = false;
+                 }
+ 
++                this.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.VILLAGER_TRADE); //Ketting
+                 this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 0));
+             }
+         }
 @@ -323,7 +_,7 @@
      @Override
      public InteractionResult mobInteract(Player p_35472_, InteractionHand p_35473_) {
@@ -9,6 +35,45 @@
              return super.mobInteract(p_35472_, p_35473_);
          } else if (this.isBaby()) {
              this.setUnhappy();
+@@ -398,7 +_,13 @@
+         this.updateDemand();
+ 
+         for(MerchantOffer merchantoffer : this.getOffers()) {
+-            merchantoffer.resetUses();
++            // CraftBukkit start
++            org.bukkit.event.entity.VillagerReplenishTradeEvent event = new org.bukkit.event.entity.VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), merchantoffer.asBukkit());
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                merchantoffer.resetUses();
++            }
++            // CraftBukkit end
+         }
+ 
+         this.resendOffersToTradingPlayer();
+@@ -459,7 +_,13 @@
+         int i = 2 - this.numberOfRestocksToday;
+         if (i > 0) {
+             for(MerchantOffer merchantoffer : this.getOffers()) {
+-                merchantoffer.resetUses();
++                // CraftBukkit start
++                org.bukkit.event.entity.VillagerReplenishTradeEvent event = new org.bukkit.event.entity.VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), merchantoffer.asBukkit());
++                org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                if (!event.isCancelled()) {
++                    merchantoffer.resetUses();
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -640,7 +_,7 @@
+ 
+     @Override
+     public void die(DamageSource p_35419_) {
+-        LOGGER.info("Villager {} died, message: '{}'", this, p_35419_.getLocalizedDeathMessage(this).getString());
++        if (org.spigotmc.SpigotConfig.logVillagerDeaths) LOGGER.info("Villager {} died, message: '{}'", this, p_35419_.getLocalizedDeathMessage(this).getString()); // Spigot
+         Entity entity = p_35419_.getEntity();
+         if (entity != null) {
+             this.tellWitnessesThatIWasMurdered(entity);
 @@ -747,8 +_,9 @@
  
      @Override
@@ -29,11 +94,29 @@
              LOGGER.info("Villager {} was struck by lightning {}.", this, p_35410_);
              Witch witch = EntityType.WITCH.create(p_35409_);
              if (witch != null) {
-@@ -819,6 +_,7 @@
+@@ -819,6 +_,13 @@
                  }
  
                  witch.setPersistenceRequired();
 +                net.neoforged.neoforge.event.EventHooks.onLivingConvert(this, witch);
++                // CraftBukkit start
++                if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTransformEvent(this, witch, org.bukkit.event.entity.EntityTransformEvent.TransformReason.LIGHTNING).isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
++                p_35409_.prepareAddFreshEntityWithPassengers(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // Ketting
                  p_35409_.addFreshEntityWithPassengers(witch);
                  this.releaseAllPois();
                  this.discard();
+@@ -905,10 +_,7 @@
+             List<Villager> list = p_35398_.getEntitiesOfClass(Villager.class, aabb);
+             List<Villager> list1 = list.stream().filter(p_186293_ -> p_186293_.wantsToSpawnGolem(p_35399_)).limit(5L).collect(Collectors.toList());
+             if (list1.size() >= p_35400_) {
+-                if (!SpawnUtil.trySpawnMob(
+-                        EntityType.IRON_GOLEM, MobSpawnType.MOB_SUMMONED, p_35398_, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM
+-                    )
+-                    .isEmpty()) {
++                if (!SpawnUtil.trySpawnMob(EntityType.IRON_GOLEM, MobSpawnType.MOB_SUMMONED, p_35398_, this.blockPosition(), 10, 8, 6, SpawnUtil.Strategy.LEGACY_IRON_GOLEM, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.VILLAGE_DEFENSE).isEmpty()) { // CraftBukkit
+                     list.forEach(GolemSensor::golemDetected);
+                 }
+             }

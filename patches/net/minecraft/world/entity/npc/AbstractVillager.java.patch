@@ -1,5 +1,30 @@
 --- a/net/minecraft/world/entity/npc/AbstractVillager.java
 +++ b/net/minecraft/world/entity/npc/AbstractVillager.java
+@@ -35,7 +_,14 @@
+ import net.minecraft.world.level.pathfinder.BlockPathTypes;
+ import net.minecraft.world.phys.Vec3;
+ 
+-public abstract class AbstractVillager extends AgeableMob implements InventoryCarrier, Npc, Merchant {
++public abstract class AbstractVillager extends AgeableMob implements InventoryCarrier, Npc, Merchant { // CraftBukkit start
++    private org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchant craftMerchant;
++
++    @Override
++    public org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchant getCraftMerchant() {
++        return (craftMerchant == null) ? craftMerchant = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchant(this) : craftMerchant;
++    }
++    // CraftBukkit end
+     private static final EntityDataAccessor<Integer> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(AbstractVillager.class, EntityDataSerializers.INT);
+     public static final int VILLAGER_SLOT_OFFSET = 300;
+     private static final int VILLAGER_INVENTORY_SIZE = 8;
+@@ -43,7 +_,7 @@
+     private Player tradingPlayer;
+     @Nullable
+     protected MerchantOffers offers;
+-    private final SimpleContainer inventory = new SimpleContainer(8);
++    private final SimpleContainer inventory = new SimpleContainer(8, (org.bukkit.craftbukkit.v1_20_R3.entity.CraftAbstractVillager) this.getBukkitEntity()); // CraftBukkit add argument
+ 
+     public AbstractVillager(EntityType<? extends AbstractVillager> p_35267_, Level p_35268_) {
+         super(p_35267_, p_35268_);
 @@ -127,6 +_,7 @@
          if (this.tradingPlayer instanceof ServerPlayer) {
              CriteriaTriggers.TRADE.trigger((ServerPlayer)this.tradingPlayer, this, p_35274_.getResult());
@@ -20,3 +45,21 @@
      }
  
      protected void stopTrading() {
+@@ -229,7 +_,16 @@
+         while(i < p_35280_ && !arraylist.isEmpty()) {
+             MerchantOffer merchantoffer = arraylist.remove(this.random.nextInt(arraylist.size())).getOffer(this, this.random);
+             if (merchantoffer != null) {
+-                p_35278_.add(merchantoffer);
++                // CraftBukkit start
++                org.bukkit.event.entity.VillagerAcquireTradeEvent event = new org.bukkit.event.entity.VillagerAcquireTradeEvent((org.bukkit.entity.AbstractVillager) getBukkitEntity(), merchantoffer.asBukkit());
++                // Suppress during worldgen
++                if (this.valid) {
++                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                }
++                if (!event.isCancelled()) {
++                    p_35278_.add(org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
++                }
++                // CraftBukkit end
+                 ++i;
+             }
+         }
