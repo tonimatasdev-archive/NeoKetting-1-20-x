@@ -1,5 +1,22 @@
 --- a/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/net/minecraft/world/level/chunk/LevelChunkSection.java
+@@ -22,9 +_,16 @@
+     private short tickingBlockCount;
+     private short tickingFluidCount;
+     private final PalettedContainer<BlockState> states;
++    // CraftBukkit start - read/write 
++    // Ketting keep original type
+     private PalettedContainerRO<Holder<Biome>> biomes;
+ 
++    public LevelChunkSection(PalettedContainer<BlockState> p_282846_, PalettedContainer<Holder<Biome>> p_281695_) {
++        this(p_282846_, (PalettedContainerRO<Holder<Biome>>) p_281695_);
++    }
++
+     public LevelChunkSection(PalettedContainer<BlockState> p_282846_, PalettedContainerRO<Holder<Biome>> p_281695_) {
++        // CraftBukkit end
+         this.states = p_282846_;
+         this.biomes = p_281695_;
+         this.recalcBlockCounts();
 @@ -65,7 +_,7 @@
  
          FluidState fluidstate = blockstate.getFluidState();
@@ -27,3 +44,18 @@
                      this.nonEmptyBlockCount += p_204445_;
                      if (p_204444_.isRandomlyTicking()) {
                          this.tickingBlockCount += p_204445_;
+@@ -176,6 +_,14 @@
+     public Holder<Biome> getNoiseBiome(int p_204434_, int p_204435_, int p_204436_) {
+         return this.biomes.get(p_204434_, p_204435_, p_204436_);
+     }
++
++    // CraftBukkit start
++    public void setBiome(int i, int j, int k, Holder<Biome> biome) {
++        //Ketting - changed back type of this.biomes
++        if (this.biomes instanceof PalettedContainer<Holder<Biome>> container)
++            container.set(i, j, k, biome);
++    }
++    // CraftBukkit end
+ 
+     public void fillBiomesFromNoise(BiomeResolver p_282075_, Climate.Sampler p_283084_, int p_282310_, int p_281510_, int p_283057_) {
+         PalettedContainer<Holder<Biome>> palettedcontainer = this.biomes.recreate();

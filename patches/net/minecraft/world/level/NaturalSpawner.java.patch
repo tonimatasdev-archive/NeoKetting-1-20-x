@@ -17,11 +17,61 @@
              if (mobcategory != MobCategory.MISC) {
                  BlockPos blockpos = entity.blockPosition();
                  p_186527_.query(
-@@ -201,7 +_,7 @@
-                                     ++l1;
+@@ -105,16 +_,36 @@
+         ServerLevel p_47030_, LevelChunk p_47031_, NaturalSpawner.SpawnState p_47032_, boolean p_47033_, boolean p_47034_, boolean p_47035_
+     ) {
+         p_47030_.getProfiler().push("spawner");
++        p_47030_.timings.mobSpawn.startTiming(); // Spigot
++
++        net.minecraft.world.level.storage.LevelData worlddata = p_47030_.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
+ 
+         for(MobCategory mobcategory : SPAWNING_CATEGORIES) {
++            // CraftBukkit start - Use per-world spawn limits
++            boolean spawnThisTick = true;
++            int limit = mobcategory.getMaxInstancesPerChunk();
++            org.bukkit.entity.SpawnCategory spawnCategory = org.bukkit.craftbukkit.v1_20_R3.util.CraftSpawnCategory.toBukkit(mobcategory);
++            if (org.bukkit.craftbukkit.v1_20_R3.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++                spawnThisTick = p_47030_.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % p_47030_.ticksPerSpawnCategory.getLong(spawnCategory) == 0;
++                limit = p_47030_.getWorld().getSpawnLimit(spawnCategory);
++            }
++
++            if (!spawnThisTick || limit == 0) {
++                continue;
++            }
++
++            p_47032_.ketting$canSpawnForCategory$limit.set(limit);
+             if ((p_47033_ || !mobcategory.isFriendly())
+                 && (p_47034_ || mobcategory.isFriendly())
+                 && (p_47035_ || !mobcategory.isPersistent())
+                 && p_47032_.canSpawnForCategory(mobcategory, p_47031_.getPos())) {
++                // CraftBukkit end
+                 spawnCategoryForChunk(mobcategory, p_47030_, p_47031_, p_47032_::canSpawn, p_47032_::afterSpawn);
+             }
++            p_47032_.ketting$canSpawnForCategory$limit.set(Integer.MAX_VALUE);
+         }
+ 
++        p_47030_.timings.mobSpawn.stopTiming(); // Spigot
+         p_47030_.getProfiler().pop();
+     }
+ 
+@@ -197,11 +_,17 @@
+                                     spawngroupdata = mob.finalizeSpawn(
+                                         p_47040_, p_47040_.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.NATURAL, spawngroupdata, null
+                                     );
+-                                    ++j;
+-                                    ++l1;
++                                    // CraftBukkit start
++                                    // SPIGOT-7045: Give ocelot babies back their special spawn reason. Note: This is the only modification required as ocelots count as monsters which means they only spawn during normal chunk ticking and do not spawn during chunk generation as starter mobs.
++                                    p_47040_.prepareAddFreshEntityWithPassengers((mob instanceof net.minecraft.world.entity.animal.Ocelot && !((org.bukkit.entity.Ageable) mob.getBukkitEntity()).isAdult()) ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OCELOT_BABY : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
                                      p_47040_.addFreshEntityWithPassengers(mob);
-                                     p_47044_.run(mob, p_47041_);
+-                                    p_47044_.run(mob, p_47041_);
 -                                    if (j >= mob.getMaxSpawnClusterSize()) {
++                                    if (!mob.isRemoved()) {
++                                        ++j;
++                                        ++l1;
++                                        p_47044_.run(mob, p_47041_);
++                                    }
++                                    // CraftBukkit end
 +                                    if (j >= net.neoforged.neoforge.event.EventHooks.getMaxSpawnPackSize(mob)) {
                                          return;
                                      }
@@ -94,3 +144,24 @@
                                      spawngroupdata = mob.finalizeSpawn(
                                          p_220451_, p_220451_.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.CHUNK_GENERATION, spawngroupdata, null
                                      );
+@@ -562,8 +_,19 @@
+             return this.unmodifiableMobCategoryCounts;
+         }
+ 
++        //Ketting start
++        public final java.util.concurrent.atomic.AtomicInteger ketting$canSpawnForCategory$limit = new java.util.concurrent.atomic.AtomicInteger(Integer.MAX_VALUE);
++        @SuppressWarnings("unused") //Ketting - CB compat
++        boolean canSpawnForCategory(MobCategory p_186549_, ChunkPos p_186550_, int limit) {
++            ketting$canSpawnForCategory$limit.set(limit);
++            return canSpawnForCategory(p_186549_, p_186550_);
++        }
++        // CraftBukkit start
+         boolean canSpawnForCategory(MobCategory p_186549_, ChunkPos p_186550_) {
+-            int i = p_186549_.getMaxInstancesPerChunk() * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
++            int i = ketting$canSpawnForCategory$limit.getAndSet(Integer.MAX_VALUE) * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
++            //Ketting end
++            // CraftBukkit end
++
+             if (this.mobCategoryCounts.getInt(p_186549_) >= i) {
+                 return false;
+             } else {
