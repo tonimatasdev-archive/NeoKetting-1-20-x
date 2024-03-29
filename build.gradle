@@ -33,6 +33,10 @@ allprojects {
     version "1.0.0"//gradleutils.version.toString()
     group 'net.neoforged'
     repositories {
+        //Ketting start
+        maven { url = 'https://nexus.c0d3m4513r.com/repository/Magma/' }
+        maven { url = 'https://nexus.c0d3m4513r.com/repository/Ketting/' }
+        //Ketting end
         mavenLocal()
     }
 }
