@@ -1,16 +1,100 @@
 --- a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
 +++ b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
-@@ -171,6 +_,13 @@
-         }
+@@ -61,6 +_,22 @@
+         this.setOwner(p_37037_);
      }
  
++    // Spigot Start - copied from tick
++    @Override
++    public void inactiveTick() {
++        this.life += 1;
++
++        if (!this.level().isClientSide && this.life > this.lifetime) {
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode();
++            }
++            // CraftBukkit end
++        }
++        super.inactiveTick();
++    }
++    // Spigot End
++
+     public FireworkRocketEntity(Level p_37058_, ItemStack p_37059_, LivingEntity p_37060_) {
+         this(p_37058_, p_37060_, p_37060_.getX(), p_37060_.getY(), p_37060_.getZ(), p_37059_);
+         this.entityData.set(DATA_ATTACHED_TO_TARGET, OptionalInt.of(p_37060_.getId()));
+@@ -143,7 +_,7 @@
+ 
+         HitResult hitresult = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity);
+         if (!this.noPhysics) {
+-            this.onHit(hitresult);
++            this.preOnHit(hitresult); // CraftBukkit - projectile hit event
+             this.hasImpulse = true;
+         }
+ 
+@@ -167,7 +_,18 @@
+         }
+ 
+         if (!this.level().isClientSide && this.life > this.lifetime) {
+-            this.explode();
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode();
++            }
++            // CraftBukkit end
++        }
++    }
++
 +    @Override
 +    protected void onHit(HitResult result) {
 +        if (result.getType() == HitResult.Type.MISS || !net.neoforged.neoforge.event.EventHooks.onProjectileImpact(this, result)) {
 +            super.onHit(result);
-+        }
-+    }
-+
-     private void explode() {
-         this.level().broadcastEntityEvent(this, (byte)17);
-         this.gameEvent(GameEvent.EXPLODE, this.getOwner());
+         }
+     }
+ 
+@@ -182,7 +_,11 @@
+     protected void onHitEntity(EntityHitResult p_37071_) {
+         super.onHitEntity(p_37071_);
+         if (!this.level().isClientSide) {
+-            this.explode();
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode();
++            }
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -191,7 +_,11 @@
+         BlockPos blockpos = new BlockPos(p_37069_.getBlockPos());
+         this.level().getBlockState(blockpos).entityInside(this.level(), blockpos, this);
+         if (!this.level().isClientSide() && this.hasExplosion()) {
+-            this.explode();
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode();
++            }
++            // CraftBukkit end
+         }
+ 
+         super.onHitBlock(p_37069_);
+@@ -215,7 +_,9 @@
+ 
+         if (f > 0.0F) {
+             if (this.attachedToEntity != null) {
++                org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.entityDamage = this; // CraftBukkit
+                 this.attachedToEntity.hurt(this.damageSources().fireworks(this, this.getOwner()), 5.0F + (float)(listtag.size() * 2));
++                org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.entityDamage = null; // CraftBukkit
+             }
+ 
+             double d0 = 5.0;
+@@ -236,7 +_,9 @@
+ 
+                     if (flag) {
+                         float f1 = f * (float)Math.sqrt((5.0 - (double)this.distanceTo(livingentity)) / 5.0);
++                        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.entityDamage = this; // CraftBukkit
+                         livingentity.hurt(this.damageSources().fireworks(this, this.getOwner()), f1);
++                        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.entityDamage = null; // CraftBukkit
+                     }
+                 }
+             }

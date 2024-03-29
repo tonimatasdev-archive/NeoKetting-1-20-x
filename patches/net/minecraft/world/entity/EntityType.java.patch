@@ -1,5 +1,21 @@
 --- a/net/minecraft/world/entity/EntityType.java
 +++ b/net/minecraft/world/entity/EntityType.java
+@@ -171,14 +_,7 @@
+     public static final EntityType<Allay> ALLAY = register(
+         "allay", EntityType.Builder.<Allay>of(Allay::new, MobCategory.CREATURE).sized(0.35F, 0.6F).clientTrackingRange(8).updateInterval(2)
+     );
+-    public static final EntityType<AreaEffectCloud> AREA_EFFECT_CLOUD = register(
+-        "area_effect_cloud",
+-        EntityType.Builder.<AreaEffectCloud>of(AreaEffectCloud::new, MobCategory.MISC)
+-            .fireImmune()
+-            .sized(6.0F, 0.5F)
+-            .clientTrackingRange(10)
+-            .updateInterval(Integer.MAX_VALUE)
+-    );
++    public static final EntityType<AreaEffectCloud> AREA_EFFECT_CLOUD = register("area_effect_cloud", EntityType.Builder.<AreaEffectCloud>of(AreaEffectCloud::new, MobCategory.MISC).fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(10)); // CraftBukkit - SPIGOT-3729: track area effect clouds
+     public static final EntityType<ArmorStand> ARMOR_STAND = register(
+         "armor_stand", EntityType.Builder.<ArmorStand>of(ArmorStand::new, MobCategory.MISC).sized(0.5F, 1.975F).clientTrackingRange(10)
+     );
 @@ -620,6 +_,10 @@
      private final EntityDimensions dimensions;
      private final FeatureFlagSet requiredFeatures;
@@ -36,16 +52,103 @@
          this.factory = p_273268_;
          this.category = p_272918_;
          this.canSpawnFarFromPlayer = p_272654_;
-@@ -656,6 +_,9 @@
+@@ -656,18 +_,22 @@
          this.clientTrackingRange = p_272895_;
          this.updateInterval = p_273451_;
          this.requiredFeatures = p_273518_;
+-    }
+-
+-    @Nullable
+-    public T spawn(
+-        ServerLevel p_20593_,
+-        @Nullable ItemStack p_20594_,
+-        @Nullable Player p_20595_,
+-        BlockPos p_20596_,
+-        MobSpawnType p_20597_,
+-        boolean p_20598_,
+-        boolean p_20599_
+-    ) {
 +        this.trackDeltasSupplier = trackDeltasSupplier;
 +        this.trackingRangeSupplier = trackingRangeSupplier;
 +        this.updateIntervalSupplier = updateIntervalSupplier;
++    }
++
++    //Ketting start
++    @Nullable
++    public T spawn(ServerLevel p_20593_, @Nullable ItemStack p_20594_, @Nullable Player p_20595_, BlockPos p_20596_, MobSpawnType p_20597_, boolean p_20598_, boolean p_20599_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        ketting$spawn$spawnReason.set(spawnReason);
++        return this.spawn(p_20593_, p_20594_, p_20595_, p_20596_, p_20597_, p_20598_, p_20599_);
++    }
++
++    @Nullable
++    public T spawn(ServerLevel p_20593_, @Nullable ItemStack p_20594_, @Nullable Player p_20595_, BlockPos p_20596_, MobSpawnType p_20597_, boolean p_20598_, boolean p_20599_) {
++        ketting$spawn$spawnReason.compareAndSet(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
++        //Ketting end
+         Consumer<T> consumer;
+         CompoundTag compoundtag;
+         if (p_20594_ != null) {
+@@ -701,32 +_,46 @@
+         Consumer<T> p_263579_, ServerLevel p_263571_, ItemStack p_263582_, @Nullable Player p_263574_
+     ) {
+         CompoundTag compoundtag = p_263582_.getTag();
+-        return compoundtag != null ? p_263579_.andThen(p_262558_ -> updateCustomEntityTag(p_263571_, p_263574_, p_262558_, compoundtag)) : p_263579_;
++        return compoundtag != null ? p_263579_.andThen((p_262558_) -> {
++            try { updateCustomEntityTag(p_263571_, p_263574_, p_262558_, compoundtag); } catch (Throwable t) { LOGGER.warn("Error loading spawn egg NBT", t); } // CraftBukkit - SPIGOT-5665
++        }) : p_263579_;
      }
  
++    public java.util.concurrent.atomic.AtomicReference<org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason> ketting$spawn$spawnReason = new java.util.concurrent.atomic.AtomicReference<>(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
      @Nullable
+     public T spawn(ServerLevel p_262634_, BlockPos p_262707_, MobSpawnType p_262597_) {
+-        return this.spawn(p_262634_, (CompoundTag)null, null, p_262707_, p_262597_, false, false);
+-    }
+-
+-    @Nullable
+-    public T spawn(
+-        ServerLevel p_262704_,
+-        @Nullable CompoundTag p_262603_,
+-        @Nullable Consumer<T> p_262621_,
+-        BlockPos p_262672_,
+-        MobSpawnType p_262644_,
+-        boolean p_262690_,
+-        boolean p_262590_
+-    ) {
++        return this.spawn(p_262634_, (CompoundTag) null, null, p_262707_, p_262597_, false, false);
++    }
++
++    // CraftBukkit start
++    @Nullable
++    public T spawn(ServerLevel p_262634_, BlockPos p_262707_, MobSpawnType p_262597_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        ketting$spawn$spawnReason.set(spawnReason);
++        return this.spawn(p_262634_, p_262707_, p_262597_);
++    }
++
++    @Nullable
++    public T spawn(ServerLevel p_262704_, @Nullable CompoundTag p_262603_, @Nullable Consumer<T> p_262621_, BlockPos p_262672_, MobSpawnType p_262644_, boolean p_262690_, boolean p_262590_, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        ketting$spawn$spawnReason.set(spawnReason);
++        return this.spawn(p_262704_, p_262603_, p_262621_, p_262672_, p_262644_, p_262690_, p_262590_);
++    }
++    // CraftBukkit end
++
++    @Nullable
++    public T spawn(ServerLevel p_262704_, @Nullable CompoundTag p_262603_, @Nullable Consumer<T> p_262621_, BlockPos p_262672_, MobSpawnType p_262644_, boolean p_262690_, boolean p_262590_) {
++        // CraftBukkit end
+         T t = this.create(p_262704_, p_262603_, p_262621_, p_262672_, p_262644_, p_262690_, p_262590_);
++        org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason = ketting$spawn$spawnReason.getAndSet(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+         if (t != null) {
++            p_262704_.prepareAddFreshEntityWithPassengers(spawnReason);
+             p_262704_.addFreshEntityWithPassengers(t);
++            return !t.isRemoved() ? t : null; // Don't return an entity when CreatureSpawnEvent is canceled
++            // CraftBukkit end
+         }
+ 
+         return t;
+     }
+-
++    
+     @Nullable
+     public T create(
+         ServerLevel p_262637_,
 @@ -760,6 +_,15 @@
                  mob.yHeadRot = mob.getYRot();
                  mob.yBodyRot = mob.getYRot();

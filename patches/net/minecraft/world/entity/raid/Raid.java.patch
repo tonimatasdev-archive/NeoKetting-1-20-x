@@ -1,5 +1,139 @@
 --- a/net/minecraft/world/entity/raid/Raid.java
 +++ b/net/minecraft/world/entity/raid/Raid.java
+@@ -160,6 +_,12 @@
+         return this.status == Raid.RaidStatus.LOSS;
+     }
+ 
++    // CraftBukkit start
++    public boolean isInProgress() {
++        return this.status == RaidStatus.ONGOING;
++    }
++    // CraftBukkit end
++
+     public float getTotalHealth() {
+         return this.totalHealth;
+     }
+@@ -243,6 +_,7 @@
+                 boolean flag = this.active;
+                 this.active = this.level.hasChunkAt(this.center);
+                 if (this.level.getDifficulty() == Difficulty.PEACEFUL) {
++                    org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.PEACE); // CraftBukkit
+                     this.stop();
+                     return;
+                 }
+@@ -262,13 +_,16 @@
+                 if (!this.level.isVillage(this.center)) {
+                     if (this.groupsSpawned > 0) {
+                         this.status = Raid.RaidStatus.LOSS;
++                        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidFinishEvent(this, new java.util.ArrayList<>()); // CraftBukkit
+                     } else {
++                        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.NOT_IN_VILLAGE); // CraftBukkit
+                         this.stop();
+                     }
+                 }
+ 
+                 ++this.ticksActive;
+                 if (this.ticksActive >= 48000L) {
++                    org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.TIMEOUT); // CraftBukkit
+                     this.stop();
+                     return;
+                 }
+@@ -340,6 +_,7 @@
+                     }
+ 
+                     if (k > 3) {
++                        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.UNSPAWNABLE);  // CraftBukkit
+                         this.stop();
+                         break;
+                     }
+@@ -351,6 +_,7 @@
+                     } else {
+                         this.status = Raid.RaidStatus.VICTORY;
+ 
++                        List<org.bukkit.entity.Player> winners = new java.util.ArrayList<>(); // CraftBukkit
+                         for(UUID uuid : this.heroesOfTheVillage) {
+                             Entity entity = this.level.getEntity(uuid);
+                             if (entity instanceof LivingEntity livingentity && !entity.isSpectator()) {
+@@ -358,9 +_,11 @@
+                                 if (livingentity instanceof ServerPlayer serverplayer) {
+                                     serverplayer.awardStat(Stats.RAID_WIN);
+                                     CriteriaTriggers.RAID_WIN.trigger(serverplayer);
++                                    winners.add(serverplayer.getBukkitEntity()); // CraftBukkit
+                                 }
+                             }
+                         }
++                        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidFinishEvent(this, winners); // CraftBukkit
+                     }
+                 }
+ 
+@@ -368,6 +_,7 @@
+             } else if (this.isOver()) {
+                 ++this.celebrationTicks;
+                 if (this.celebrationTicks >= 600) {
++                    org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidStopEvent(this, org.bukkit.event.raid.RaidStopEvent.Reason.FINISHED); // CraftBukkit
+                     this.stop();
+                     return;
+                 }
+@@ -487,6 +_,10 @@
+         DifficultyInstance difficultyinstance = this.level.getCurrentDifficultyAt(p_37756_);
+         boolean flag1 = this.shouldSpawnBonusGroup();
+ 
++        // CraftBukkit start
++        Raider leader = null;
++        List<Raider> raiders = new java.util.ArrayList<>();
++        // CraftBukkit end
+         for(Raid.RaiderType raid$raidertype : Raid.RaiderType.VALUES) {
+             int j = this.getDefaultNumSpawns(raid$raidertype, i, flag1)
+                 + this.getPotentialBonusSpawns(raid$raidertype, this.random, i, difficultyinstance, flag1);
+@@ -502,9 +_,11 @@
+                     raider.setPatrolLeader(true);
+                     this.setLeader(i, raider);
+                     flag = true;
++                    leader = raider; // CraftBukkit
+                 }
+ 
+                 this.joinRaid(i, raider, p_37756_, false);
++                raiders.add(raider); // CraftBukkit
+                 if (raid$raidertype.entityType == EntityType.RAVAGER) {
+                     Raider raider1 = null;
+                     if (i == this.getNumGroups(Difficulty.NORMAL)) {
+@@ -522,6 +_,7 @@
+                         this.joinRaid(i, raider1, p_37756_, false);
+                         raider1.moveTo(p_37756_, 0.0F, 0.0F);
+                         raider1.startRiding(raider);
++                        raiders.add(raider); // CraftBukkit
+                     }
+                 }
+             }
+@@ -531,6 +_,7 @@
+         ++this.groupsSpawned;
+         this.updateBossbar();
+         this.setDirty();
++        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callRaidSpawnWaveEvent(this, leader, raiders); // CraftBukkit
+     }
+ 
+     public void joinRaid(int p_37714_, Raider p_37715_, @Nullable BlockPos p_37716_, boolean p_37717_) {
+@@ -545,6 +_,7 @@
+                 p_37715_.finalizeSpawn(this.level, this.level.getCurrentDifficultyAt(p_37716_), MobSpawnType.EVENT, null, null);
+                 p_37715_.applyRaidBuffs(p_37714_, false);
+                 p_37715_.setOnGround(true);
++                this.level.prepareAddFreshEntityWithPassengers(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.RAID);
+                 this.level.addFreshEntityWithPassengers(p_37715_);
+             }
+         }
+@@ -802,6 +_,12 @@
+         this.heroesOfTheVillage.add(p_37727_.getUUID());
+     }
+ 
++    // CraftBukkit start - a method to get all raiders
++    public java.util.Collection<Raider> getRaiders() {
++        return this.groupRaiderMap.values().stream().flatMap(Set::stream).collect(java.util.stream.Collectors.toSet());
++    }
++    // CraftBukkit end
++
+     static enum RaidStatus {
+         ONGOING,
+         VICTORY,
 @@ -825,7 +_,7 @@
          }
      }
