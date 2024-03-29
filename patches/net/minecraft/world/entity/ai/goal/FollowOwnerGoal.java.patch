@@ -1,0 +1,18 @@
+--- a/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
++++ b/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
+@@ -122,7 +_,14 @@
+         } else if (!this.canTeleportTo(new BlockPos(p_25304_, p_25305_, p_25306_))) {
+             return false;
+         } else {
+-            this.tamable.moveTo((double)p_25304_ + 0.5, (double)p_25305_, (double)p_25306_ + 0.5, this.tamable.getYRot(), this.tamable.getXRot());
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityTeleportEvent event = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTeleportEvent(this.tamable, (double) p_25304_ + 0.5D, (double) p_25305_, (double) p_25306_ + 0.5D);
++            if (event.isCancelled()) {
++                return false;
++            }
++            org.bukkit.Location to = event.getTo();
++            this.tamable.moveTo(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
++            // CraftBukkit end
+             this.navigation.stop();
+             return true;
+         }

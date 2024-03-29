@@ -9,30 +9,93 @@
              for(int j = 0; j < i * 8; ++j) {
                  float f = this.random.nextFloat() * (float) (Math.PI * 2);
                  float f1 = this.random.nextFloat() * 0.5F + 0.5F;
-@@ -200,6 +_,8 @@
+@@ -190,6 +_,9 @@
+         return (EntityType<? extends Slime>)super.getType();
+     }
+ 
++    //Ketting start - mixin inject
++    private java.util.List<LivingEntity> remove$slimes;
++    private Object newK;
+     @Override
+     public void remove(Entity.RemovalReason p_149847_) {
+         int i = this.getSize();
+@@ -200,6 +_,15 @@
              int j = i / 2;
              int k = 2 + this.random.nextInt(3);
  
++            //Ketting start
++            newK = removeEvent(p_149847_, k);
++            if (newK == null) return;
++            k = (int) newK;
++            remove$slimes = new java.util.ArrayList<>(j);
++            //Ketting end
++
 +            var children = new java.util.ArrayList<Mob>(); // Neo: Children list for MobSplitEvent.
 +
              for(int l = 0; l < k; ++l) {
                  float f1 = ((float)(l % 2) - 0.5F) * f;
                  float f2 = ((float)(l / 2) - 0.5F) * f;
-@@ -214,8 +_,13 @@
+@@ -214,14 +_,50 @@
                      slime.setInvulnerable(this.isInvulnerable());
                      slime.setSize(j, true);
                      slime.moveTo(this.getX() + (double)f1, this.getY() + 0.5, this.getZ() + (double)f2, this.random.nextFloat() * 360.0F, 0.0F);
--                    this.level().addFreshEntity(slime);
 +
 +                    children.add(slime); // Neo: Record the slime until after event firing.
-                 }
++                }
 +            }
 +
 +            if (!net.neoforged.neoforge.event.EventHooks.onMobSplit(this, children).isCanceled()) {
-+                children.forEach(this.level()::addFreshEntity);
++                children.forEach(slime -> {
++                    remove$slimes.add(slime); // CraftBukkit
++                    this.level().disableSpawnFor(slime); //Ketting - spawning is handled in removeSpawnNewSlimes
+                     this.level().addFreshEntity(slime);
+-                }
++                });
              }
++            
++            removeSpawnNewSlimes(p_149847_);
          }
  
+         super.remove(p_149847_);
+     }
+ 
++    private Object removeEvent(Entity.RemovalReason p_149847_, int k) {
++        org.bukkit.event.entity.SlimeSplitEvent event = new org.bukkit.event.entity.SlimeSplitEvent((org.bukkit.entity.Slime) this.getBukkitEntity(), k);
++        this.level().getCraftServer().getPluginManager().callEvent(event);
++
++        if (!event.isCancelled() && event.getCount() > 0) {
++            k = event.getCount();
++        } else {
++            super.remove(p_149847_);
++            return null;
++        }
++        return k;
++    }
++
++    private void removeSpawnNewSlimes(Entity.RemovalReason p_149847_) {
++        if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTransformEvent(this, remove$slimes, org.bukkit.event.entity.EntityTransformEvent.TransformReason.SPLIT).isCancelled()) {
++            super.remove(p_149847_);
++            return;
++        }
++        for (LivingEntity living : remove$slimes) {
++            this.level().prepareAddFreshEntity(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SLIME_SPLIT);
++            this.level().addFreshEntity(living);
++        }
++    }
++    //Ketting end
++
+     @Override
+     public void push(Entity p_33636_) {
+         super.push(p_33636_);
+@@ -306,7 +_,7 @@
+                 }
+ 
+                 ChunkPos chunkpos = new ChunkPos(p_219116_);
+-                boolean flag = WorldgenRandom.seedSlimeChunk(chunkpos.x, chunkpos.z, ((WorldGenLevel)p_219114_).getSeed(), 987234911L).nextInt(10) == 0;
++                boolean flag = WorldgenRandom.seedSlimeChunk(chunkpos.x, chunkpos.z, ((WorldGenLevel)p_219114_).getSeed(), p_219114_.getMinecraftWorld().spigotConfig.slimeSeed).nextInt(10) == 0; // Spigot
+                 if (p_219117_.nextInt(10) == 0 && flag && p_219116_.getY() < 40) {
+                     return checkMobSpawnRules(p_219113_, p_219114_, p_219115_, p_219116_, p_219117_);
+                 }
 @@ -366,6 +_,12 @@
      public EntityDimensions getDimensions(Pose p_33597_) {
          return super.getDimensions(p_33597_).scale(0.255F * (float)this.getSize());

@@ -1,0 +1,63 @@
+--- a/net/minecraft/world/entity/monster/Creeper.java
++++ b/net/minecraft/world/entity/monster/Creeper.java
+@@ -206,9 +_,20 @@
+     @Override
+     public void thunderHit(ServerLevel p_32286_, LightningBolt p_32287_) {
+         super.thunderHit(p_32286_, p_32287_);
++        // CraftBukkit start
++        if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callCreeperPowerEvent(this, p_32287_, org.bukkit.event.entity.CreeperPowerEvent.PowerCause.LIGHTNING).isCancelled()) {
++            return;
++        }
++        // CraftBukkit end
+         this.entityData.set(DATA_IS_POWERED, true);
+     }
+ 
++    // CraftBukkit start
++    public void setPowered(boolean powered) {
++        this.entityData.set(Creeper.DATA_IS_POWERED, powered);
++    }
++    // CraftBukkit end
++
+     @Override
+     protected InteractionResult mobInteract(Player p_32301_, InteractionHand p_32302_) {
+         ItemStack itemstack = p_32301_.getItemInHand(p_32302_);
+@@ -234,10 +_,19 @@
+     private void explodeCreeper() {
+         if (!this.level().isClientSide) {
+             float f = this.isPowered() ? 2.0F : 1.0F;
+-            this.dead = true;
+-            this.level().explode(this, this.getX(), this.getY(), this.getZ(), (float)this.explosionRadius * f, Level.ExplosionInteraction.MOB);
+-            this.discard();
+-            this.spawnLingeringCloud();
++            // CraftBukkit start
++            org.bukkit.event.entity.ExplosionPrimeEvent event = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callExplosionPrimeEvent(this, this.explosionRadius * f, false);
++            if (!event.isCancelled()) {
++                this.dead = true;
++                // CraftBukkit end
++                this.level().explode(this, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.MOB); // CraftBukkit
++                // CraftBukkit start
++                this.discard();
++                this.spawnLingeringCloud();
++            } else {
++                swell = 0;
++            }
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -245,6 +_,7 @@
+         Collection<MobEffectInstance> collection = this.getActiveEffects();
+         if (!collection.isEmpty()) {
+             AreaEffectCloud areaeffectcloud = new AreaEffectCloud(this.level(), this.getX(), this.getY(), this.getZ());
++            areaeffectcloud.setOwner(this); // CraftBukkit
+             areaeffectcloud.setRadius(2.5F);
+             areaeffectcloud.setRadiusOnUse(-0.5F);
+             areaeffectcloud.setWaitTime(10);
+@@ -255,6 +_,7 @@
+                 areaeffectcloud.addEffect(new MobEffectInstance(mobeffectinstance));
+             }
+ 
++            this.level().prepareAddFreshEntity(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EXPLOSION);
+             this.level().addFreshEntity(areaeffectcloud);
+         }
+     }

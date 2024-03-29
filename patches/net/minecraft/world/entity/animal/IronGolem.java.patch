@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/entity/animal/IronGolem.java
++++ b/net/minecraft/world/entity/animal/IronGolem.java
+@@ -105,6 +_,8 @@
+     @Override
+     protected void doPush(Entity p_28839_) {
+         if (p_28839_ instanceof Enemy && !(p_28839_ instanceof Creeper) && this.getRandom().nextInt(20) == 0) {
++            this.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetLivingEntityEvent.TargetReason.COLLISION);
++            this.ketting$setTarget$fireEvent.set(true);
+             this.setTarget((LivingEntity)p_28839_);
+         }
+ 

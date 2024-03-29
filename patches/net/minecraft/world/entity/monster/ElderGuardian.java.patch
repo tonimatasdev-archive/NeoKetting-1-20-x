@@ -1,0 +1,10 @@
+--- a/net/minecraft/world/entity/monster/ElderGuardian.java
++++ b/net/minecraft/world/entity/monster/ElderGuardian.java
+@@ -68,6 +_,7 @@
+         super.customServerAiStep();
+         if ((this.tickCount + this.getId()) % 1200 == 0) {
+             MobEffectInstance mobeffectinstance = new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 6000, 2);
++            MobEffectUtil.ketting$addEffectToPlayersAround$cause.set(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); // Ketting - CraftBukkit
+             List<ServerPlayer> list = MobEffectUtil.addEffectToPlayersAround((ServerLevel)this.level(), this, this.position(), 50.0, mobeffectinstance, 1200);
+             list.forEach(
+                 p_308752_ -> p_308752_.connection

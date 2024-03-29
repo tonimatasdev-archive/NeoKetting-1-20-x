@@ -22,10 +22,18 @@
  
              if (!this.level().isClientSide) {
 -                if (this.random.nextInt(10) == 0) {
-+                if (this.random.nextInt(10) == 0 && !net.neoforged.neoforge.event.EventHooks.onAnimalTame(this, p_29414_)) {
++                if (this.random.nextInt(10) == 0 && !net.neoforged.neoforge.event.EventHooks.onAnimalTame(this, p_29414_) && !org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTameEvent(this, p_29414_).isCancelled()) { // CraftBukkit
                      this.tame(p_29414_);
                      this.level().broadcastEntityEvent(this, (byte)7);
                  } else {
+@@ -286,6 +_,7 @@
+                 itemstack.shrink(1);
+             }
+ 
++            this.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); //Ketting
+             this.addEffect(new MobEffectInstance(MobEffects.POISON, 900));
+             if (p_29414_.isCreative() || !this.isInvulnerable()) {
+                 this.hurt(this.damageSources().playerAttack(p_29414_), Float.MAX_VALUE);
 @@ -342,7 +_,10 @@
  
      public static SoundEvent getAmbient(Level p_218239_, RandomSource p_218240_) {
@@ -45,5 +53,31 @@
 +        var imitation = p_29409_.builtInRegistryHolder().getData(net.neoforged.neoforge.registries.datamaps.builtin.NeoForgeDataMaps.PARROT_IMITATIONS);
 +        if (imitation != null) return imitation.sound();
          return MOB_SOUND_MAP.getOrDefault(p_29409_, SoundEvents.PARROT_AMBIENT);
+     }
+ 
+@@ -395,7 +_,7 @@
+ 
+     @Override
+     public boolean isPushable() {
+-        return true;
++        return super.isPushable(); // CraftBukkit - collidable API
+     }
+ 
+     @Override
+@@ -410,11 +_,14 @@
+         if (this.isInvulnerableTo(p_29378_)) {
+             return false;
+         } else {
+-            if (!this.level().isClientSide) {
++            // CraftBukkit start
++            boolean result = super.hurt(p_29378_, p_29379_);
++            if (!this.level().isClientSide && result) {
++                // CraftBukkit end
+                 this.setOrderedToSit(false);
+             }
+ 
+-            return super.hurt(p_29378_, p_29379_);
++            return result; // CraftBukkit
+         }
      }
  

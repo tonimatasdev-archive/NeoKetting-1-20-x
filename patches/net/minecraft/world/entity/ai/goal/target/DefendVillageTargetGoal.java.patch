@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/entity/ai/goal/target/DefendVillageTargetGoal.java
++++ b/net/minecraft/world/entity/ai/goal/target/DefendVillageTargetGoal.java
+@@ -49,6 +_,8 @@
+ 
+     @Override
+     public void start() {
++        golem.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.DEFEND_VILLAGE);
++        golem.ketting$setTarget$fireEvent.set(true);
+         this.golem.setTarget(this.potentialTarget);
+         super.start();
+     }

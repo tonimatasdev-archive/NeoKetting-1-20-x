@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/entity/animal/horse/TraderLlama.java
++++ b/net/minecraft/world/entity/animal/horse/TraderLlama.java
+@@ -146,6 +_,8 @@
+ 
+         @Override
+         public void start() {
++            mob.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_OWNER);
++            mob.ketting$setTarget$fireEvent.set(true);
+             this.mob.setTarget(this.ownerLastHurtBy);
+             Entity entity = this.llama.getLeashHolder();
+             if (entity instanceof WanderingTrader) {

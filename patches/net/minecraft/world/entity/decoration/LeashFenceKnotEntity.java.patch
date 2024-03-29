@@ -1,0 +1,48 @@
+--- a/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
++++ b/net/minecraft/world/entity/decoration/LeashFenceKnotEntity.java
+@@ -96,6 +_,12 @@
+ 
+             for(Mob mob : list) {
+                 if (mob.getLeashHolder() == p_31842_) {
++                    // CraftBukkit start
++                    if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callPlayerLeashEntityEvent(mob, this, p_31842_, p_31843_).isCancelled()) {
++                        ((net.minecraft.server.level.ServerPlayer) p_31842_).connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(mob, mob.getLeashHolder()));
++                        continue;
++                    }
++                    // CraftBukkit end
+                     mob.setLeashedTo(this, true);
+                     flag = true;
+                 }
+@@ -103,14 +_,29 @@
+ 
+             boolean flag1 = false;
+             if (!flag) {
+-                this.discard();
+-                if (p_31842_.getAbilities().instabuild) {
++                // CraftBukkit start - Move below
++                // this.discard();
++                boolean die = true;
++                // CraftBukkit end
++                if (true || p_31842_.getAbilities().instabuild) { // CraftBukkit - Process for non-creative as well
+                     for(Mob mob1 : list) {
+                         if (mob1.isLeashed() && mob1.getLeashHolder() == this) {
+-                            mob1.dropLeash(true, false);
++                            // CraftBukkit start
++                            if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callPlayerUnleashEntityEvent(mob1, p_31842_, p_31843_).isCancelled()) {
++                                die = false;
++                                continue;
++                            }
++                            mob1.dropLeash(true, !p_31842_.getAbilities().instabuild); // false -> survival mode boolean
++                            // CraftBukkit end
+                             flag1 = true;
+                         }
+                     }
++
++                    // CraftBukkit start
++                    if (die) {
++                        this.discard();
++                    }
++                    // CraftBukkit end
+                 }
+             }
+ 

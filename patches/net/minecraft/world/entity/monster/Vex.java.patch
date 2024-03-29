@@ -1,0 +1,13 @@
+--- a/net/minecraft/world/entity/monster/Vex.java
++++ b/net/minecraft/world/entity/monster/Vex.java
+@@ -263,6 +_,10 @@
+ 
+         @Override
+         public void start() {
++            // Ketting start
++            Vex.this.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.OWNER_ATTACKED_TARGET);
++            Vex.this.ketting$setTarget$fireEvent.set(true);
++            // Ketting end
+             LivingEntity livingentity = Vex.this.getTarget();
+             if (livingentity != null) {
+                 Vec3 vec3 = livingentity.getEyePosition();

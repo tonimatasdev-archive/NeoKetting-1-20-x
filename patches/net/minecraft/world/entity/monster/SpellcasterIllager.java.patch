@@ -9,3 +9,15 @@
          NONE(0, 0.0, 0.0, 0.0),
          SUMMON_VEX(1, 0.7, 0.7, 0.8),
          FANGS(2, 0.4, 0.3, 0.35),
+@@ -197,6 +_,11 @@
+         public void tick() {
+             --this.attackWarmupDelay;
+             if (this.attackWarmupDelay == 0) {
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.handleEntitySpellCastEvent(SpellcasterIllager.this, this.getSpell())) {
++                    return;
++                }
++                // CraftBukkit end
+                 this.performSpellCasting();
+                 SpellcasterIllager.this.playSound(SpellcasterIllager.this.getCastingSoundEvent(), 1.0F, 1.0F);
+             }

@@ -14,3 +14,11 @@
      }
  
      public boolean isClimbing() {
+@@ -176,6 +_,7 @@
+         if (p_33793_ instanceof Spider.SpiderEffectsGroupData spider$spidereffectsgroupdata) {
+             MobEffect mobeffect = spider$spidereffectsgroupdata.effect;
+             if (mobeffect != null) {
++                this.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); //Ketting
+                 this.addEffect(new MobEffectInstance(mobeffect, -1));
+             }
+         }
