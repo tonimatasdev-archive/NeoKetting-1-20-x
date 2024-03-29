@@ -1,0 +1,57 @@
+--- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -45,6 +_,7 @@
+     static final Logger LOGGER = LogUtils.getLogger();
+     private static final Pattern SHA1 = Pattern.compile("^[a-fA-F0-9]{40}$");
+     private static final Splitter COMMA_SPLITTER = Splitter.on(',').trimResults();
++    public final boolean debug = this.get("debug", false); // CraftBukkit
+     public final boolean onlineMode = this.get("online-mode", true);
+     public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
+     public final String serverIp = this.get("server-ip", "");
+@@ -125,12 +_,31 @@
+         );
+     }
+ 
+-    public static DedicatedServerProperties fromFile(Path p_180930_) {
+-        return new DedicatedServerProperties(loadFromFile(p_180930_));
+-    }
+-
+-    protected DedicatedServerProperties reload(RegistryAccess p_139761_, Properties p_139762_) {
+-        return new DedicatedServerProperties(p_139762_);
++    // CraftBukkit start
++    public DedicatedServerProperties(Properties properties, joptsimple.OptionSet optionset) {
++        super(properties, optionset);
++        // CraftBukkit end
++        String s = this.get("level-seed", "");
++        boolean flag = this.get("generate-structures", true);
++        long i = WorldOptions.parseSeed(s).orElse(WorldOptions.randomSeed());
++        this.worldOptions = new WorldOptions(i, flag, false);
++        this.worldDimensionData = new DedicatedServerProperties.WorldDimensionData(this.get("generator-settings", (p_211543_) -> {
++            return GsonHelper.parse(!p_211543_.isEmpty() ? p_211543_ : "{}");
++        }, new JsonObject()), this.get("level-type", (p_211541_) -> {
++            return p_211541_.toLowerCase(Locale.ROOT);
++        }, WorldPresets.NORMAL.location().toString()));
++        this.serverResourcePackInfo = getServerPackInfo(this.get("resource-pack-id", ""), this.get("resource-pack", ""), this.get("resource-pack-sha1", ""), this.getLegacyString("resource-pack-hash"), this.get("require-resource-pack", false), this.get("resource-pack-prompt", ""));
++        this.initialDataPackConfiguration = getDatapackConfig(this.get("initial-enabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getEnabled())), this.get("initial-disabled-packs", String.join(",", WorldDataConfiguration.DEFAULT.dataPacks().getDisabled())));
++    }
++
++    // CraftBukkit start
++    public static DedicatedServerProperties fromFile(Path p_180930_, joptsimple.OptionSet optionset) {
++        return new DedicatedServerProperties(loadFromFile(p_180930_), optionset);
++    }
++
++    protected DedicatedServerProperties reload(RegistryAccess p_139761_, Properties p_139762_, joptsimple.OptionSet optionset) {
++        return new DedicatedServerProperties(properties, optionset);
++        // CraftBukkit end
+     }
+ 
+     @Nullable
+@@ -201,7 +_,7 @@
+         return this.worldDimensionData.create(p_250466_);
+     }
+ 
+-    public static record WorldDimensionData(JsonObject generatorSettings, String levelType) {
++    static record WorldDimensionData(JsonObject generatorSettings, String levelType) {
+         private static final Map<String, ResourceKey<WorldPreset>> LEGACY_PRESET_NAMES = Map.of(
+             "default", WorldPresets.NORMAL, "largebiomes", WorldPresets.LARGE_BIOMES
+         );

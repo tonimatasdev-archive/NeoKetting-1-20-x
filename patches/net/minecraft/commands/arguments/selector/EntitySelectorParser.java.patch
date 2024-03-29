@@ -1,12 +1,47 @@
 --- a/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 +++ b/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
-@@ -463,6 +_,9 @@
+@@ -204,8 +_,19 @@
+         };
+     }
+ 
++    //Ketting start - CraftBukkit method
++    public final java.util.concurrent.atomic.AtomicBoolean ketting$parseSelector$overridePermissions = new java.util.concurrent.atomic.AtomicBoolean(false);
++    @SuppressWarnings("unused")
++    protected void parseSelector(boolean overridePermissions) throws CommandSyntaxException {
++        ketting$parseSelector$overridePermissions.set(overridePermissions);
++        parseSelector();
++    }
++    //Ketting end - CraftBukkit method
++    
+     protected void parseSelector() throws CommandSyntaxException {
+         this.usesSelectors = true;
++        //Ketting - the above does get overwritten immediately, but keep it for mixin compat anyway
++        this.usesSelectors = !ketting$parseSelector$overridePermissions.getAndSet(false); //CraftBukkit
+         this.suggestions = this::suggestSelector;
+         if (!this.reader.canRead()) {
+             throw ERROR_MISSING_SELECTOR_TYPE.createWithContext(this.reader);
+@@ -453,6 +_,13 @@
+     public void setOrder(BiConsumer<Vec3, List<? extends Entity>> p_121269_) {
+         this.order = p_121269_;
+     }
++    //Ketting start - CraftBukkit Method
++    public java.util.concurrent.atomic.AtomicBoolean ketting$parse$overridePermissions = new java.util.concurrent.atomic.AtomicBoolean(false);
++    public EntitySelector parse(boolean overridePermissions) throws CommandSyntaxException {
++        ketting$parseSelector$overridePermissions.set(overridePermissions);
++        return parse();
++    }
++    //Ketting end
+ 
+     public EntitySelector parse() throws CommandSyntaxException {
+         this.startPosition = this.reader.getCursor();
+@@ -463,6 +_,10 @@
              }
  
              this.reader.skip();
 +            EntitySelector forgeSelector = net.neoforged.neoforge.common.command.EntitySelectorManager.parseSelector(this);
 +            if (forgeSelector != null)
 +                return forgeSelector;
++            ketting$parseSelector$overridePermissions.set(ketting$parse$overridePermissions.getAndSet(false)); //Ketting - from CraftBukkit
              this.parseSelector();
          } else {
              this.parseNameOrUUID();

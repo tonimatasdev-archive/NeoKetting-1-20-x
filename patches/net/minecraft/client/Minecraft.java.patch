@@ -229,7 +229,7 @@
              }
  
              this.pause = flag1;
-+            net.neoforged.neoforge.client.ClientHooks.onClientPauseUpdate(this.pause);
++            //net.neoforged.neoforge.client.ClientHooks.onClientPauseUpdate(this.pause); //Ketting
          }
  
          long l = Util.getNanos();

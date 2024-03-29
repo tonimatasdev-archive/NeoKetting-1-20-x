@@ -1,5 +1,16 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
+@@ -146,8 +_,10 @@
+     public static final int LEVEL_ADMINS = 3;
+     public static final int LEVEL_OWNERS = 4;
+     private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
++    private final CommandDispatcher<CommandSourceStack> forgeDispatcher = new CommandDispatcher<>(); //Ketting
+ 
+     public Commands(Commands.CommandSelection p_230943_, CommandBuildContext p_230944_) {
++        this(); // CraftBukkit
+         AdvancementCommands.register(this.dispatcher);
+         AttributeCommand.register(this.dispatcher, p_230944_);
+         ExecuteCommand.register(this.dispatcher, p_230944_);
 @@ -213,7 +_,7 @@
              JfrCommand.register(this.dispatcher);
          }
@@ -9,16 +20,98 @@
              TestCommand.register(this.dispatcher);
              ResetChunksCommand.register(this.dispatcher);
              RaidCommand.register(this.dispatcher);
-@@ -247,6 +_,7 @@
-         if (p_230943_.includeIntegrated) {
+@@ -248,7 +_,19 @@
              PublishCommand.register(this.dispatcher);
          }
-+        net.neoforged.neoforge.event.EventHooks.onCommandRegister(this.dispatcher, p_230943_, p_230944_);
  
++        org.kettingpowered.ketting.command.RoutableCommandDispatcher.setFallback(this.dispatcher); //Ketting
++
++        net.neoforged.neoforge.event.EventHooks.onCommandRegister(this.forgeDispatcher, p_230943_, p_230944_); //Ketting
++        // CraftBukkit start
++    }
++
++    public Commands() {
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
++        // CraftBukkit end
++
++        //Ketting start
++        this.forgeDispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
++        //Ketting end
      }
-@@ -264,6 +_,16 @@
  
+     public static <S> ParseResults<S> mapSource(ParseResults<S> p_242928_, UnaryOperator<S> p_242890_) {
+@@ -257,13 +_,85 @@
+         return new ParseResults<>(commandcontextbuilder1, p_242928_.getReader(), p_242928_.getExceptions());
+     }
+ 
++    // CraftBukkit start
++    public void dispatchServerCommand(CommandSourceStack p_230958_, String p_230959_) {
++        com.google.common.base.Joiner joiner = com.google.common.base.Joiner.on(" ");
++        if (p_230959_.startsWith("/")) {
++            p_230959_ = p_230959_.substring(1);
++        }
++
++        org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(p_230958_.getBukkitSender(), p_230959_);
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return;
++        }
++        p_230959_ = event.getCommand();
++
++        String[] args = p_230959_.split(" ");
++
++        String cmd = args[0];
++        if (cmd.startsWith("minecraft:")) cmd = cmd.substring("minecraft:".length());
++        if (cmd.startsWith("bukkit:")) cmd = cmd.substring("bukkit:".length());
++        if (cmd.startsWith("forge:")) {
++            setForgeCommand(true);
++            cmd = cmd.substring("forge:".length());
++        }
++
++        // Block disallowed commands
++        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
++                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
++                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
++            setForgeCommand(false);
++            return;
++        }
++
++        // Handle vanilla commands;
++        if (p_230958_.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {
++            args[0] = "minecraft:" + args[0];
++        }
++
++        String newCommand = joiner.join(args);
++        //Ketting start
++        try {
++            this.performPrefixedCommand(p_230958_, newCommand, newCommand);
++        } finally {
++            setForgeCommand(false);
++        }
++        //Ketting start
++    }
++    // CraftBukkit end
++    //Ketting start
++    public static final java.util.concurrent.atomic.AtomicReference<String> ketting$performPrefixedCommand$label = new java.util.concurrent.atomic.AtomicReference<>(null);  // Ketting
++    public void performPrefixedCommand(CommandSourceStack p_230958_, String p_230959_, String label) {
++        ketting$performPrefixedCommand$label.set(label);
++        performPrefixedCommand(p_230958_, p_230959_);
++    }
++    private void ketting$performPrefixedCommandPass(String s){
++        String label = ketting$performPrefixedCommand$label.get();
++        if (label == null) ketting$performCommand$label.set(s);
++        else ketting$performCommand$label.set(label);
++    }
++    //Ketting end
++
+     public void performPrefixedCommand(CommandSourceStack p_230958_, String p_230959_) {
+         p_230959_ = p_230959_.startsWith("/") ? p_230959_.substring(1) : p_230959_;
+-        this.performCommand(this.dispatcher.parse(p_230959_, p_230958_), p_230959_);
++        ketting$performPrefixedCommandPass(p_230959_); //Ketting
++        this.performCommand(this.getCorrectDispatcher(p_230959_).unwrap().parse(p_230959_, p_230958_), p_230959_);
+     }
+ 
++    private final java.util.concurrent.atomic.AtomicReference<String> ketting$performCommand$label = new java.util.concurrent.atomic.AtomicReference<>(null);  // Ketting
      public void performCommand(ParseResults<CommandSourceStack> p_242844_, String p_242841_) {
          CommandSourceStack commandsourcestack = p_242844_.getContext().getSource();
 +        net.neoforged.neoforge.event.CommandEvent event = new net.neoforged.neoforge.event.CommandEvent(p_242844_);
@@ -34,13 +127,142 @@
          commandsourcestack.getServer().getProfiler().push(() -> "/" + p_242841_);
          ContextChain<CommandSourceStack> contextchain = finishParsing(p_242844_, p_242841_, commandsourcestack);
  
-@@ -361,7 +_,8 @@
-         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
+@@ -301,6 +_,7 @@
+                 LOGGER.error("'/{}' threw an exception", p_242841_, exception);
+             }
+         } finally {
++            ketting$performCommand$label.set(null);
+             commandsourcestack.getServer().getProfiler().pop();
+         }
+     }
+@@ -317,7 +_,7 @@
+                 int i = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
+                 MutableComponent mutablecomponent = Component.empty()
+                     .withStyle(ChatFormatting.GRAY)
+-                    .withStyle(p_82134_ -> p_82134_.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/" + p_307311_)));
++                    .withStyle(p_82134_ -> p_82134_.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/" + (ketting$performPrefixedCommand$label.get() == null ? p_307311_ : ketting$performPrefixedCommand$label.getAndSet(null))))); // CraftBukkit
+                 if (i > 10) {
+                     mutablecomponent.append(CommonComponents.ELLIPSIS);
+                 }
+@@ -357,13 +_,60 @@
+         }
+     }
+ 
++    public void performCommand(ParseResults<CommandSourceStack> p_242844_, String p_242841_, String label) { // CraftBukkit
++        this.ketting$performCommand$label.set(label);
++        this.performCommand(p_242844_, p_242841_);
++    }
++
++    //Ketting start - rewrite to add forge dispatcher support
+     public void sendCommands(ServerPlayer p_82096_) {
+-        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
++        if ( org.spigotmc.SpigotConfig.tabComplete < 0 ) return; // Spigot
++        // CraftBukkit start
++        // Register Vanilla commands into builtRoot as before
++        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
++
++        RootCommandNode<SharedSuggestionProvider> vanillaRoot = new RootCommandNode<>();
++        Commands vanillaCommands = p_82096_.server.vanillaCommandDispatcher;
++        map.put(vanillaCommands.getDispatcher().getRoot(), vanillaRoot);
++
++        // FORGE: Use our own command node merging method to handle redirect nodes properly, see issue #7551
++        net.neoforged.neoforge.server.command.CommandHelper.mergeCommandNode(vanillaCommands.getDispatcher().getRoot(), vanillaRoot, map, p_82096_.createCommandSourceStack(), ctx -> 0, suggest -> SuggestionProviders.safelySwap((com.mojang.brigadier.suggestion.SuggestionProvider<SharedSuggestionProvider>) (com.mojang.brigadier.suggestion.SuggestionProvider<?>) suggest));
++
++        // Now build the global commands in a second pass
          RootCommandNode<SharedSuggestionProvider> rootcommandnode = new RootCommandNode<>();
          map.put(this.dispatcher.getRoot(), rootcommandnode);
 -        this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, p_82096_.createCommandSourceStack(), map);
-+        // FORGE: Use our own command node merging method to handle redirect nodes properly, see issue #7551
+-        p_82096_.connection.send(new ClientboundCommandsPacket(rootcommandnode));
++
 +        net.neoforged.neoforge.server.command.CommandHelper.mergeCommandNode(this.dispatcher.getRoot(), rootcommandnode, map, p_82096_.createCommandSourceStack(), ctx -> 0, suggest -> SuggestionProviders.safelySwap((com.mojang.brigadier.suggestion.SuggestionProvider<SharedSuggestionProvider>) (com.mojang.brigadier.suggestion.SuggestionProvider<?>) suggest));
-         p_82096_.connection.send(new ClientboundCommandsPacket(rootcommandnode));
++
++        java.util.LinkedHashSet<String> set = new java.util.LinkedHashSet<>();
++        for (CommandNode<SharedSuggestionProvider> child : rootcommandnode.getChildren()) {
++            set.add(child.getName());
++        }
++
++        org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(p_82096_.getBukkitEntity(), new java.util.LinkedHashSet<>(set));
++        event.getPlayer().getServer().getPluginManager().callEvent(event);
++
++        // Remove labels that were removed during the event
++        for (String orig : set) {
++            if (!event.getCommands().contains(orig)) {
++                rootcommandnode.removeCommand(orig);
++            }
++        }
++
++        //Now add the forge commands
++        RootCommandNode<SharedSuggestionProvider> forgeRoot = new RootCommandNode<>();
++        map.put(this.forgeDispatcher.getRoot(), forgeRoot);
++
++        net.neoforged.neoforge.server.command.CommandHelper.mergeCommandNode(this.forgeDispatcher.getRoot(), forgeRoot, map, p_82096_.createCommandSourceStack(), ctx -> 0, suggest -> SuggestionProviders.safelySwap((com.mojang.brigadier.suggestion.SuggestionProvider<SharedSuggestionProvider>) (com.mojang.brigadier.suggestion.SuggestionProvider<?>) suggest));
++
++        //Add all the forge commands to the root node
++        forgeRoot.getChildren().forEach(rootcommandnode::addChild);
++
++        ClientboundCommandsPacket packet = new ClientboundCommandsPacket(rootcommandnode);
++        //Ketting TODO - ambassador support
++        p_82096_.connection.send(packet);
+     }
++    //Ketting end
+ 
+     private void fillUsableCommands(
+         CommandNode<CommandSourceStack> p_82113_,
+@@ -372,6 +_,8 @@
+         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> p_82116_
+     ) {
+         for(CommandNode<CommandSourceStack> commandnode : p_82113_.getChildren()) {
++            if ( !org.spigotmc.SpigotConfig.sendNamespaced && commandnode.getName().contains( ":" ) ) continue; // Spigot
++
+             if (commandnode.canUse(p_82115_)) {
+                 ArgumentBuilder<SharedSuggestionProvider, ?> argumentbuilder = (ArgumentBuilder<SharedSuggestionProvider, ?>)(ArgumentBuilder<?, ?>)commandnode.createBuilder();
+                 argumentbuilder.requires(p_82126_ -> true);
+@@ -417,7 +_,48 @@
      }
  
+     public CommandDispatcher<CommandSourceStack> getDispatcher() {
++        if (org.kettingpowered.ketting.common.utils.DispatcherRedirector.needsRedirect())
++            return getForgeDispatcher().unwrap();
+         return this.dispatcher;
++    }
++
++    public org.kettingpowered.ketting.common.utils.Wrapper<CommandDispatcher<CommandSourceStack>> getForgeDispatcher() {
++        return org.kettingpowered.ketting.common.utils.Wrapper.wrap(this.forgeDispatcher);
++    }
++
++    //Ketting start - dispatcher correction
++    private boolean forgeCommand = false;
++    public void setForgeCommand(boolean forgeCommand) {
++        this.forgeCommand = forgeCommand;
++    }
++
++    public org.kettingpowered.ketting.common.utils.Wrapper<CommandDispatcher<CommandSourceStack>> getCorrectDispatcher(String cmd) {
++        return getCorrectDispatcher(cmd, true);
++    }
++
++    public org.kettingpowered.ketting.common.utils.Wrapper<CommandDispatcher<CommandSourceStack>> getCorrectDispatcher(String cmd, boolean stripSlash) {
++        if (forgeCommand) return getForgeDispatcher();
++
++        String literal = cmd.split(" ")[0]; //the command root, ex. deop
++        if (literal.startsWith("/") && stripSlash)
++            literal = literal.substring(1);
++        if (literal.startsWith("forge:"))
++            return getForgeDispatcher();
++
++        final String search = literal;
++        CommandNode<CommandSourceStack> found = getForgeDispatcher().unwrap()
++                .getRoot()
++                .getChildren()
++                .stream()
++                .filter(node -> node instanceof com.mojang.brigadier.tree.LiteralCommandNode)
++                .filter(node -> ((com.mojang.brigadier.tree.LiteralCommandNode<?>) node).getLiteral().equals(search))
++                .findFirst()
++                .orElse(null);
++
++        if (found != null)
++            return getForgeDispatcher();
++
++        return org.kettingpowered.ketting.common.utils.Wrapper.wrap(getDispatcher()); //Call getDispatcher so we can still redirect if needed
+     }
+ 
+     public static <S> void validateParseResults(ParseResults<S> p_306093_) throws CommandSyntaxException {

@@ -1,0 +1,23 @@
+--- a/net/minecraft/server/commands/DebugCommand.java
++++ b/net/minecraft/server/commands/DebugCommand.java
+@@ -164,12 +_,19 @@
+         }
+     }
+ 
+-    public static class Tracer implements CommandSource, TraceCallbacks {
++    static class Tracer implements CommandSource, TraceCallbacks {
+         public static final int INDENT_OFFSET = 1;
+         private final PrintWriter output;
+         private int lastIndent;
+         private boolean waitingForResult;
+ 
++        //Ketting start
++        @Override
++        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
++            return new org.bukkit.craftbukkit.v1_20_R3.command.DebugCommandCommandSender(wrapper, Tracer.this);
++        }
++        //Ketting end
++        
+         Tracer(PrintWriter p_180079_) {
+             this.output = p_180079_;
+         }

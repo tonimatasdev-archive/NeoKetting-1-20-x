@@ -26,8 +26,6 @@ import java.util.Set;
 
 import static org.kettingpowered.ketting.remapper.KettingRedirectAdapter.loadInt;
 
-// 你好
-// 不要抄（笑）
 @SuppressWarnings("unused")
 public class KettingEnumExtender {
 

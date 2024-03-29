@@ -1,0 +1,44 @@
+--- a/net/minecraft/network/chat/TextColor.java
++++ b/net/minecraft/network/chat/TextColor.java
+@@ -17,7 +_,10 @@
+     public static final Codec<TextColor> CODEC = Codec.STRING.comapFlatMap(TextColor::parseColor, TextColor::serialize);
+     private static final Map<ChatFormatting, TextColor> LEGACY_FORMAT_TO_COLOR = Stream.of(ChatFormatting.values())
+         .filter(ChatFormatting::isColor)
+-        .collect(ImmutableMap.toImmutableMap(Function.identity(), p_237301_ -> new TextColor(p_237301_.getColor(), p_237301_.getName())));
++        .collect(ImmutableMap.toImmutableMap(Function.identity(), p_237301_ -> {
++            ketting$format = p_237301_; // Ketting - CraftBukkit
++            return new TextColor(p_237301_.getColor(), p_237301_.getName());
++        }));
+     private static final Map<String, TextColor> NAMED_COLORS = LEGACY_FORMAT_TO_COLOR.values()
+         .stream()
+         .collect(ImmutableMap.toImmutableMap(p_237297_ -> p_237297_.name, Function.identity()));
+@@ -25,15 +_,29 @@
+     @Nullable
+     private final String name;
+ 
++    // CraftBukkit start
++    @Nullable
++    public final ChatFormatting format;
++    public static @Nullable ChatFormatting ketting$format;
++    private static String wrap(String passthrough, @Nullable ChatFormatting format){
++        ketting$format = format;
++        return passthrough;
++    }
++    private TextColor(int p_131263_, String p_131264_, @Nullable ChatFormatting format) {
++        this(p_131263_, wrap(p_131264_, format));
++    }
+     private TextColor(int p_131263_, String p_131264_) {
+         this.value = p_131263_ & 16777215;
+         this.name = p_131264_;
++        this.format = ketting$format;
+     }
+ 
+     private TextColor(int p_131261_) {
+         this.value = p_131261_ & 16777215;
+         this.name = null;
++        this.format = null;
+     }
++    // CraftBukkit end
+ 
+     public int getValue() {
+         return this.value;
