@@ -1,41 +1,155 @@
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -118,6 +_,9 @@
+@@ -118,6 +_,10 @@
      private CompoundTag leashInfoTag;
      private BlockPos restrictCenter = BlockPos.ZERO;
      private float restrictRadius = -1.0F;
 +    @Nullable
 +    private MobSpawnType spawnType;
 +    private boolean spawnCancelled = false;
++    public boolean aware = true; // CraftBukkit
  
      protected Mob(EntityType<? extends Mob> p_21368_, Level p_21369_) {
          super(p_21368_, p_21369_);
-@@ -221,7 +_,10 @@
+@@ -136,6 +_,12 @@
+         }
      }
  
++    // CraftBukkit start
++    public void setPersistenceRequired(boolean persistenceRequired) {
++        this.persistenceRequired = persistenceRequired;
++    }
++    // CraftBukkit end
++
+     protected void registerGoals() {
+     }
+ 
+@@ -220,8 +_,61 @@
+         return this.target;
+     }
+ 
++    //Ketting start
++    public final java.util.concurrent.atomic.AtomicReference<org.bukkit.event.entity.EntityTargetEvent.TargetReason> ketting$setTarget$reason = new java.util.concurrent.atomic.AtomicReference<>(org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN);
++    public final java.util.concurrent.atomic.AtomicBoolean ketting$setTarget$fireEvent = new java.util.concurrent.atomic.AtomicBoolean(true);
++    public boolean ketting$setTarget$result = false;
++
++    public boolean setTarget(@Nullable LivingEntity p_21544_, @Nullable org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent) {
++        if (reason != null) ketting$setTarget$reason.set(reason);
++        ketting$setTarget$fireEvent.set(fireEvent);
++        // CraftBukkit start - fire event
++        setTarget(p_21544_);
++        return ketting$setTarget$result;
++    }
++    //Ketting end
++
      public void setTarget(@Nullable LivingEntity p_21544_) {
--        this.target = p_21544_;
-+        net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(this, p_21544_, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.MOB_TARGET);
-+        if(!changeTargetEvent.isCanceled()) {
-+             this.target = changeTargetEvent.getNewTarget();
++        if (getTarget() == p_21544_) {
++            ketting$setTarget$result = false;
++            ketting$setTarget$fireEvent.set(true);
++            ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN);
++            return;
 +        }
++        if (ketting$setTarget$fireEvent.getAndSet(true)) {
++            org.bukkit.event.entity.EntityTargetEvent.TargetReason reason = ketting$setTarget$reason.getAndSet(org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN);
++            if (reason == null) reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN;
++            if (reason == org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN && getTarget() != null && p_21544_ == null) {
++                reason = getTarget().isAlive() ? org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET : org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED;
++            }
++            if (reason == org.bukkit.event.entity.EntityTargetEvent.TargetReason.UNKNOWN) {
++                net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(this, p_21544_, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.MOB_TARGET);
++                if(!changeTargetEvent.isCanceled()) {
++                    p_21544_ = changeTargetEvent.getNewTarget();
++                }
++            }
++            org.bukkit.craftbukkit.v1_20_R3.entity.CraftLivingEntity ctarget = null;
++            if (p_21544_ != null) {
++                ctarget = (org.bukkit.craftbukkit.v1_20_R3.entity.CraftLivingEntity) p_21544_.getBukkitEntity();
++            }
++            org.bukkit.event.entity.EntityTargetLivingEntityEvent event = new org.bukkit.event.entity.EntityTargetLivingEntityEvent(this.getBukkitEntity(), ctarget, reason);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                ketting$setTarget$result = false;
++                return;
++            }
++
++            if (event.getTarget() != null) {
++                p_21544_ = ((org.bukkit.craftbukkit.v1_20_R3.entity.CraftLivingEntity) event.getTarget()).getHandle();
++            } else {
++                p_21544_ = null;
++            }
++        }
++
+         this.target = p_21544_;
++        ketting$setTarget$result = true;
++        return;
++        // CraftBukkit end
      }
  
      @Override
-@@ -424,6 +_,9 @@
+@@ -353,6 +_,12 @@
+         return null;
+     }
+ 
++    // CraftBukkit start - Add delegate method
++    public SoundEvent getAmbientSound0() {
++        return getAmbientSound();
++    }
++    // CraftBukkit end
++
+     @Override
+     public void addAdditionalSaveData(CompoundTag p_21484_) {
+         super.addAdditionalSaveData(p_21484_);
+@@ -396,7 +_,7 @@
+         }
+ 
+         p_21484_.put("HandDropChances", listtag3);
+-        if (this.leashHolder != null) {
++        if (this.leashHolder != null && !this.leashHolder.pluginRemoved) { // CraftBukkit - SPIGOT-7487: Don't save (and possible drop) leash, when the holder was removed by a plugin
+             CompoundTag compoundtag2 = new CompoundTag();
+             if (this.leashHolder instanceof LivingEntity) {
+                 UUID uuid = this.leashHolder.getUUID();
+@@ -424,16 +_,29 @@
          if (this.isNoAi()) {
              p_21484_.putBoolean("NoAI", this.isNoAi());
          }
 +        if (this.spawnType != null) {
 +            p_21484_.putString("neoforge:spawn_type", this.spawnType.name());
 +        }
++
++        p_21484_.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
      }
  
      @Override
-@@ -477,6 +_,14 @@
+     public void readAdditionalSaveData(CompoundTag p_21450_) {
+         super.readAdditionalSaveData(p_21450_);
++        // CraftBukkit start - If looting or persistence is false only use it if it was set after we started using it
+         if (p_21450_.contains("CanPickUpLoot", 1)) {
+-            this.setCanPickUpLoot(p_21450_.getBoolean("CanPickUpLoot"));
++            boolean data = p_21450_.getBoolean("CanPickUpLoot");
++            if (isLevelAtLeast(p_21450_, 1) || data) {
++                this.setCanPickUpLoot(data);
++            }
+         }
+ 
+-        this.persistenceRequired = p_21450_.getBoolean("PersistenceRequired");
++        boolean data = p_21450_.getBoolean("PersistenceRequired");
++        if (isLevelAtLeast(p_21450_, 1) || data) {
++            this.persistenceRequired = data;
++        }
++        // CraftBukkit end
+         if (p_21450_.contains("ArmorItems", 9)) {
+             ListTag listtag = p_21450_.getList("ArmorItems", 10);
+ 
+@@ -477,6 +_,20 @@
          }
  
          this.setNoAi(p_21450_.getBoolean("NoAI"));
++
++        // CraftBukkit start
++        if (p_21450_.contains("Bukkit.Aware")) {
++            this.aware = p_21450_.getBoolean("Bukkit.Aware");
++        }
++        // CraftBukkit end
 +
 +        if (p_21450_.contains("neoforge:spawn_type")) {
 +            try {
@@ -56,6 +170,51 @@
              Vec3i vec3i = this.getPickupReach();
  
              for(ItemEntity itementity : this.level()
+@@ -545,6 +_,7 @@
+ 
+     protected void pickUpItem(ItemEntity p_21471_) {
+         ItemStack itemstack = p_21471_.getItem();
++        ketting$equipItemIfPossible$entity.set(p_21471_); // Ketting - CraftBukkit - add item
+         ItemStack itemstack1 = this.equipItemIfPossible(itemstack.copy());
+         if (!itemstack1.isEmpty()) {
+             this.onItemPickup(p_21471_);
+@@ -556,6 +_,15 @@
+         }
+     }
+ 
++    //Ketting start
++    public final java.util.concurrent.atomic.AtomicReference<ItemEntity> ketting$equipItemIfPossible$entity = new java.util.concurrent.atomic.AtomicReference<>(null);
++    @SuppressWarnings("unused") //Ketting - CB compat
++    public ItemStack equipItemIfPossible(ItemStack p_255842_, ItemEntity entity) {
++        ketting$equipItemIfPossible$entity.set(entity);
++        return this.equipItemIfPossible(p_255842_);
++    }
++    //Ketting end
++
+     public ItemStack equipItemIfPossible(ItemStack p_255842_) {
+         EquipmentSlot equipmentslot = getEquipmentSlotForItem(p_255842_);
+         ItemStack itemstack = this.getItemBySlot(equipmentslot);
+@@ -566,10 +_,19 @@
+             flag = itemstack.isEmpty();
+         }
+ 
+-        if (flag && this.canHoldItem(p_255842_)) {
++        // CraftBukkit start
++        ItemEntity entity = ketting$equipItemIfPossible$entity.getAndSet(null);
++        boolean canPickup = flag && this.canHoldItem(p_255842_);
++        if (entity != null) {
++            canPickup = !org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityPickupItemEvent(this, entity, 0, !canPickup).isCancelled();
++        }
++        if (canPickup) {
++            // CraftBukkit end
+             double d0 = (double)this.getEquipmentDropChance(equipmentslot);
+             if (!itemstack.isEmpty() && (double)Math.max(this.random.nextFloat() - 0.1F, 0.0F) < d0) {
++                this.forceDrops = true; // CraftBukkit
+                 this.spawnAtLocation(itemstack);
++                this.forceDrops = false; // CraftBukkit
+             }
+ 
+             if (equipmentslot.isArmor() && p_255842_.getCount() > 1) {
 @@ -698,6 +_,14 @@
              this.discard();
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
@@ -71,6 +230,24 @@
              if (entity != null) {
                  double d0 = entity.distanceToSqr(this);
                  int i = this.getType().getCategory().getDespawnDistance();
+@@ -722,6 +_,7 @@
+     @Override
+     protected final void serverAiStep() {
+         ++this.noActionTime;
++        if (!this.aware) return; // CraftBukkit
+         this.level().getProfiler().push("sensing");
+         this.sensing.tick();
+         this.level().getProfiler().pop();
+@@ -738,7 +_,9 @@
+             this.targetSelector.tick();
+             this.level().getProfiler().pop();
+             this.level().getProfiler().push("goalSelector");
++            this.forceDrops = true; //Ketting
+             this.goalSelector.tick();
++            this.forceDrops = false; //Ketting
+             this.level().getProfiler().pop();
+         }
+ 
 @@ -1031,6 +_,16 @@
          }
      }
@@ -95,6 +272,137 @@
 +        this.spawnType = p_21436_;
          return p_21437_;
      }
+ 
+@@ -1086,6 +_,12 @@
+         if (!this.isAlive()) {
+             return InteractionResult.PASS;
+         } else if (this.getLeashHolder() == p_21420_) {
++            // CraftBukkit start - fire PlayerUnleashEntityEvent
++            if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callPlayerUnleashEntityEvent(this, p_21420_, p_21421_).isCancelled()) {
++                ((net.minecraft.server.level.ServerPlayer) p_21420_).connection.send(new ClientboundSetEntityLinkPacket(this, this.getLeashHolder()));
++                return InteractionResult.PASS;
++            }
++            // CraftBukkit end
+             this.dropLeash(true, !p_21420_.getAbilities().instabuild);
+             this.gameEvent(GameEvent.ENTITY_INTERACT, p_21420_);
+             return InteractionResult.sidedSuccess(this.level().isClientSide);
+@@ -1109,6 +_,12 @@
+     private InteractionResult checkAndHandleImportantInteractions(Player p_21500_, InteractionHand p_21501_) {
+         ItemStack itemstack = p_21500_.getItemInHand(p_21501_);
+         if (itemstack.is(Items.LEAD) && this.canBeLeashed(p_21500_)) {
++            // CraftBukkit start - fire PlayerLeashEntityEvent
++            if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callPlayerLeashEntityEvent(this, p_21500_, p_21500_, p_21501_).isCancelled()) {
++                ((net.minecraft.server.level.ServerPlayer) p_21500_).connection.send(new ClientboundSetEntityLinkPacket(this, this.getLeashHolder()));
++                return InteractionResult.PASS;
++            }
++            // CraftBukkit end
+             this.setLeashedTo(p_21500_, true);
+             itemstack.shrink(1);
+             return InteractionResult.sidedSuccess(this.level().isClientSide);
+@@ -1177,13 +_,21 @@
+         return this.restrictRadius != -1.0F;
+     }
+ 
++    // CraftBukkit start
++    //Ketting start - move back to original method
++    public final java.util.concurrent.atomic.AtomicReference<org.bukkit.event.entity.EntityTransformEvent.TransformReason> ketting$convertTo$transformReason = new java.util.concurrent.atomic.AtomicReference<>(org.bukkit.event.entity.EntityTransformEvent.TransformReason.UNKNOWN);
++    public final java.util.concurrent.atomic.AtomicReference<org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason> ketting$convertTo$spawnReason = new java.util.concurrent.atomic.AtomicReference<>(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+     @Nullable
+     public <T extends Mob> T convertTo(EntityType<T> p_21407_, boolean p_21408_) {
+         if (this.isRemoved()) {
++            ketting$convertTo$transformReason.set(org.bukkit.event.entity.EntityTransformEvent.TransformReason.UNKNOWN);
++            ketting$convertTo$spawnReason.set(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+             return null;
+         } else {
+             T t = p_21407_.create(this.level());
+             if (t == null) {
++                ketting$convertTo$transformReason.set(org.bukkit.event.entity.EntityTransformEvent.TransformReason.UNKNOWN);
++                ketting$convertTo$spawnReason.set(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+                 return null;
+             } else {
+                 t.copyPosition(this);
+@@ -1211,6 +_,13 @@
+                     }
+                 }
+ 
++                // CraftBukkit start
++                if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTransformEvent(this, t, ketting$convertTo$transformReason.getAndSet(org.bukkit.event.entity.EntityTransformEvent.TransformReason.UNKNOWN)).isCancelled()) {
++                    ketting$convertTo$spawnReason.set(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++                    return null;
++                }
++                // CraftBukkit end
++                this.level().prepareAddFreshEntity(ketting$convertTo$spawnReason.getAndSet(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT));
+                 this.level().addFreshEntity(t);
+                 if (this.isPassenger()) {
+                     Entity entity = this.getVehicle();
+@@ -1224,6 +_,14 @@
+         }
+     }
+ 
++    @Nullable
++    public <T extends Mob> T convertTo(EntityType<T> p_21407_, boolean p_21408_, org.bukkit.event.entity.EntityTransformEvent.TransformReason transformReason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        ketting$convertTo$spawnReason.set(spawnReason);
++        ketting$convertTo$transformReason.set(transformReason);
++        return convertTo(p_21407_, p_21408_);
++    }
++    //Ketting end
++
+     protected void tickLeash() {
+         if (this.leashInfoTag != null) {
+             this.restoreLeashFromSave();
+@@ -1231,7 +_,8 @@
+ 
+         if (this.leashHolder != null) {
+             if (!this.isAlive() || !this.leashHolder.isAlive()) {
+-                this.dropLeash(true, true);
++                this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), (!this.isAlive()) ? org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.PLAYER_UNLEASH : org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.HOLDER_GONE)); // CraftBukkit
++                this.dropLeash(true, !this.leashHolder.pluginRemoved);// CraftBukkit - SPIGOT-7487: Don't drop leash, when the holder was removed by a plugin
+             }
+         }
+     }
+@@ -1241,7 +_,9 @@
+             this.leashHolder = null;
+             this.leashInfoTag = null;
+             if (!this.level().isClientSide && p_21457_) {
++                this.forceDrops = true; // CraftBukkit
+                 this.spawnAtLocation(Items.LEAD);
++                this.forceDrops = false; // CraftBukkit
+             }
+ 
+             if (!this.level().isClientSide && p_21456_ && this.level() instanceof ServerLevel) {
+@@ -1288,6 +_,7 @@
+     public boolean startRiding(Entity p_21396_, boolean p_21397_) {
+         boolean flag = super.startRiding(p_21396_, p_21397_);
+         if (flag && this.isLeashed()) {
++            this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.UNKNOWN)); // CraftBukkit
+             this.dropLeash(true, true);
+         }
+ 
+@@ -1310,7 +_,9 @@
+             }
+ 
+             if (this.tickCount > 100) {
++                this.forceDrops = true; // CraftBukkit
+                 this.spawnAtLocation(Items.LEAD);
++                this.forceDrops = false; // CraftBukkit
+                 this.leashInfoTag = null;
+             }
+         }
+@@ -1392,6 +_,15 @@
+ 
+         int i = EnchantmentHelper.getFireAspect(this);
+         if (i > 0) {
++            // CraftBukkit start - Call a combust event when somebody hits with a fire enchanted item
++            org.bukkit.event.entity.EntityCombustByEntityEvent combustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), p_21372_.getBukkitEntity(), i * 4);
++            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
++
++            if (!combustEvent.isCancelled()) {
++                p_21372_.ketting$setSecondsOnFire$callEvent.set(false);
++                p_21372_.setSecondsOnFire(combustEvent.getDuration());
++            }
++            // CraftBukkit end
+             p_21372_.setSecondsOnFire(i * 4);
+         }
  
 @@ -1442,14 +_,24 @@
      }
@@ -122,6 +430,14 @@
      @VisibleForTesting
      public void removeFreeWill() {
          this.removeAllGoals(p_262562_ -> true);
+@@ -1462,6 +_,7 @@
+ 
+     @Override
+     protected void removeAfterChangingDimensions() {
++        this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.UNKNOWN)); // CraftBukkit
+         super.removeAfterChangingDimensions();
+         this.dropLeash(true, false);
+         this.getAllSlots().forEach(p_278936_ -> {
 @@ -1476,5 +_,40 @@
      public ItemStack getPickResult() {
          SpawnEggItem spawneggitem = SpawnEggItem.byId(this.getType());
