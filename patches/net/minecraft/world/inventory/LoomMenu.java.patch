@@ -1,0 +1,107 @@
+--- a/net/minecraft/world/inventory/LoomMenu.java
++++ b/net/minecraft/world/inventory/LoomMenu.java
+@@ -27,6 +_,21 @@
+ import net.minecraft.world.level.block.entity.BlockEntityType;
+ 
+ public class LoomMenu extends AbstractContainerMenu {
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView bukkitEntity = null;
++    private org.bukkit.entity.Player player;
++
++    @Override
++    public org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView getBukkitView() {
++        if (bukkitEntity != null) {
++            return bukkitEntity;
++        }
++
++        org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryLoom inventory = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryLoom(this.inputContainer, this.outputContainer);
++        bukkitEntity = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView(this.player, inventory, this);
++        return bukkitEntity;
++    }
++    // CraftBukkit end
+     private static final int PATTERN_NOT_SET = -1;
+     private static final int INV_SLOT_START = 4;
+     private static final int INV_SLOT_END = 31;
+@@ -42,21 +_,8 @@
+     private final Slot patternSlot;
+     private final Slot resultSlot;
+     long lastSoundTime;
+-    private final Container inputContainer = new SimpleContainer(3) {
+-        @Override
+-        public void setChanged() {
+-            super.setChanged();
+-            LoomMenu.this.slotsChanged(this);
+-            LoomMenu.this.slotUpdateListener.run();
+-        }
+-    };
+-    private final Container outputContainer = new SimpleContainer(1) {
+-        @Override
+-        public void setChanged() {
+-            super.setChanged();
+-            LoomMenu.this.slotUpdateListener.run();
+-        }
+-    };
++    private final Container inputContainer;
++    private final Container outputContainer;
+ 
+     public LoomMenu(int p_39856_, Inventory p_39857_) {
+         this(p_39856_, p_39857_, ContainerLevelAccess.NULL);
+@@ -64,6 +_,33 @@
+ 
+     public LoomMenu(int p_39859_, Inventory p_39860_, final ContainerLevelAccess p_39861_) {
+         super(MenuType.LOOM, p_39859_);
++        this.inputContainer = new SimpleContainer(3) {
++            public void setChanged() {
++                super.setChanged();
++                LoomMenu.this.slotsChanged(this);
++                LoomMenu.this.slotUpdateListener.run();
++            }
++
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return p_39861_.getLocation();
++            }
++            // CraftBukkit end
++        };
++        this.outputContainer = new SimpleContainer(1) {
++            public void setChanged() {
++                super.setChanged();
++                LoomMenu.this.slotUpdateListener.run();
++            }
++
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return p_39861_.getLocation();
++            }
++            // CraftBukkit end
++        };
+         this.access = p_39861_;
+         this.bannerSlot = this.addSlot(new Slot(this.inputContainer, 0, 13, 26) {
+             @Override
+@@ -119,10 +_,12 @@
+         }
+ 
+         this.addDataSlot(this.selectedBannerPatternIndex);
++        player = (org.bukkit.entity.Player) p_39860_.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     @Override
+     public boolean stillValid(Player p_39865_) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, p_39865_, Blocks.LOOM);
+     }
+ 
+@@ -287,6 +_,11 @@
+             ListTag listtag;
+             if (compoundtag != null && compoundtag.contains("Patterns", 9)) {
+                 listtag = compoundtag.getList("Patterns", 10);
++                // CraftBukkit start
++                while (listtag.size() > 20) {
++                    listtag.remove(20);
++                }
++                // CraftBukkit end
+             } else {
+                 listtag = new ListTag();
+                 if (compoundtag == null) {

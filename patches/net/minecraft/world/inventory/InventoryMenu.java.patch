@@ -1,5 +1,27 @@
 --- a/net/minecraft/world/inventory/InventoryMenu.java
 +++ b/net/minecraft/world/inventory/InventoryMenu.java
+@@ -39,11 +_,21 @@
+     private final ResultContainer resultSlots = new ResultContainer();
+     public final boolean active;
+     private final Player owner;
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView bukkitEntity = null;
++    private Inventory player;
++    // CraftBukkit end
+ 
+     public InventoryMenu(Inventory p_39706_, boolean p_39707_, final Player p_39708_) {
+         super(null, 0);
+         this.active = p_39707_;
+         this.owner = p_39708_;
++        // CraftBukkit start
++        ((TransientCraftingContainer) this.craftSlots).setOwner(p_39708_); // CraftBukkit - pass player
++        ((TransientCraftingContainer) this.craftSlots).resultInventory = this.resultSlots; // CraftBukkit - let InventoryCrafting know about its result slot
++        this.player = p_39706_; // CraftBukkit - save player
++        setTitle(net.minecraft.network.chat.Component.translatable("container.crafting")); // SPIGOT-4722: Allocate title for player inventory
++        // CraftBukkit end
+         this.addSlot(new ResultSlot(p_39706_.player, this.craftSlots, this.resultSlots, 0, 154, 28));
+ 
+         for(int i = 0; i < 2; ++i) {
 @@ -68,7 +_,7 @@
  
                  @Override
@@ -9,3 +31,21 @@
                  }
  
                  @Override
+@@ -251,4 +_,17 @@
+     public boolean shouldMoveToInventory(int p_150591_) {
+         return p_150591_ != this.getResultSlotIndex();
+     }
++
++    // CraftBukkit start
++    @Override
++    public org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView getBukkitView() {
++        if (bukkitEntity != null) {
++            return bukkitEntity;
++        }
++
++        org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryCrafting inventory = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryCrafting(this.craftSlots, this.resultSlots);
++        bukkitEntity = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++        return bukkitEntity;
++    }
++    // CraftBukkit end
+ }

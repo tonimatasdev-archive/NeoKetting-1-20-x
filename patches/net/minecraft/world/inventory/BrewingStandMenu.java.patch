@@ -1,5 +1,32 @@
 --- a/net/minecraft/world/inventory/BrewingStandMenu.java
 +++ b/net/minecraft/world/inventory/BrewingStandMenu.java
+@@ -26,6 +_,10 @@
+     private final Container brewingStand;
+     private final ContainerData brewingStandData;
+     private final Slot ingredientSlot;
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView bukkitEntity = null;
++    private Inventory player;
++    // CraftBukkit end
+ 
+     public BrewingStandMenu(int p_39090_, Inventory p_39091_) {
+         this(p_39090_, p_39091_, new SimpleContainer(5), new SimpleContainerData(2));
+@@ -33,6 +_,7 @@
+ 
+     public BrewingStandMenu(int p_39093_, Inventory p_39094_, Container p_39095_, ContainerData p_39096_) {
+         super(MenuType.BREWING_STAND, p_39093_);
++        player = p_39094_; // CraftBukkit
+         checkContainerSize(p_39095_, 5);
+         checkContainerDataCount(p_39096_, 2);
+         this.brewingStand = p_39095_;
+@@ -57,6 +_,7 @@
+ 
+     @Override
+     public boolean stillValid(Player p_39098_) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.brewingStand.stillValid(p_39098_);
+     }
+ 
 @@ -77,7 +_,7 @@
                      if (!this.moveItemStackTo(itemstack1, 3, 4, false)) {
                          return ItemStack.EMPTY;
@@ -26,12 +53,27 @@
                  CriteriaTriggers.BREWED_POTION.trigger((ServerPlayer)p_150499_, potion.builtInRegistryHolder());
              }
  
-@@ -186,7 +_,7 @@
+@@ -186,7 +_,20 @@
          }
  
          public static boolean mayPlaceItem(ItemStack p_39134_) {
 -            return p_39134_.is(Items.POTION) || p_39134_.is(Items.SPLASH_POTION) || p_39134_.is(Items.LINGERING_POTION) || p_39134_.is(Items.GLASS_BOTTLE);
+-        }
+-    }
 +            return net.neoforged.neoforge.common.brewing.BrewingRecipeRegistry.isValidInput(p_39134_);
-         }
-     }
++        }
++    }
++
++    // CraftBukkit start
++    @Override
++    public org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView getBukkitView() {
++        if (bukkitEntity != null) {
++            return bukkitEntity;
++        }
++
++        org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryBrewer inventory = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryBrewer(this.brewingStand);
++        bukkitEntity = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++        return bukkitEntity;
++    }
++    // CraftBukkit end
  }

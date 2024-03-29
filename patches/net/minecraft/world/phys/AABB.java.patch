@@ -1,0 +1,15 @@
+--- a/net/minecraft/world/phys/AABB.java
++++ b/net/minecraft/world/phys/AABB.java
+@@ -36,6 +_,12 @@
+         );
+     }
+ 
++    //Ketting start
++    public AABB(net.minecraft.core.Vec3i start, net.minecraft.core.Vec3i end) {
++        this((double)start.getX(), (double)start.getY(), (double)start.getZ(), (double)end.getX(), (double)end.getY(), (double)end.getZ());
++    }
++    //Ketting end
++
+     public AABB(Vec3 p_82302_, Vec3 p_82303_) {
+         this(p_82302_.x, p_82302_.y, p_82302_.z, p_82303_.x, p_82303_.y, p_82303_.z);
+     }
