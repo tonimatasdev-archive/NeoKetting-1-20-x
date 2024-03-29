@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/entity/projectile/ThrownTrident.java
++++ b/net/minecraft/world/entity/projectile/ThrownTrident.java
+@@ -142,7 +_,7 @@
+                 if (lightningbolt != null) {
+                     lightningbolt.moveTo(Vec3.atBottomCenterOf(blockpos));
+                     lightningbolt.setCause(entity1 instanceof ServerPlayer ? (ServerPlayer)entity1 : null);
+-                    this.level().addFreshEntity(lightningbolt);
++                    ((ServerLevel) this.level()).strikeLightning(lightningbolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.TRIDENT); // CraftBukkit
+                     soundevent = SoundEvents.TRIDENT_THUNDER;
+                     f1 = 5.0F;
+                 }

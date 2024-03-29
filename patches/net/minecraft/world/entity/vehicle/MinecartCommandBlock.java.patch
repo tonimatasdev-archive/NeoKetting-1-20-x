@@ -9,3 +9,16 @@
          return this.commandBlock.usedBy(p_38522_);
      }
  
+@@ -107,6 +_,12 @@
+     }
+ 
+     public class MinecartCommandBase extends BaseCommandBlock {
++        // CraftBukkit start
++        @Override
++        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
++            return (org.bukkit.craftbukkit.v1_20_R3.entity.CraftMinecartCommand) MinecartCommandBlock.this.getBukkitEntity();
++        }
++        // CraftBukkit end
+         @Override
+         public ServerLevel getLevel() {
+             return (ServerLevel)MinecartCommandBlock.this.level();

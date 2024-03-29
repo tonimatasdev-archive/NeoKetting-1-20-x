@@ -17,11 +17,22 @@
      private static final Map<RailShape, Pair<Vec3i, Vec3i>> EXITS = Util.make(Maps.newEnumMap(RailShape.class), p_38135_ -> {
          Vec3i vec3i = Direction.WEST.getNormal();
          Vec3i vec3i1 = Direction.EAST.getNormal();
-@@ -85,6 +_,7 @@
+@@ -85,6 +_,18 @@
          p_38135_.put(RailShape.NORTH_WEST, Pair.of(vec3i2, vec3i));
          p_38135_.put(RailShape.NORTH_EAST, Pair.of(vec3i2, vec3i1));
      });
 +    private static net.neoforged.neoforge.common.IMinecartCollisionHandler COLLISIONS = null;
++
++    // CraftBukkit start
++    public boolean slowWhenEmpty = true;
++    private double derailedX = 0.5;
++    private double derailedY = 0.5;
++    private double derailedZ = 0.5;
++    private double flyingX = 0.95;
++    private double flyingY = 0.95;
++    private double flyingZ = 0.95;
++    public double maxSpeed = 0.4D;
++    // CraftBukkit end
  
      protected AbstractMinecart(EntityType<?> p_38087_, Level p_38088_) {
          super(p_38087_, p_38088_);
@@ -49,6 +60,29 @@
      }
  
      @Override
+@@ -238,6 +_,13 @@
+ 
+     @Override
+     public void tick() {
++        // CraftBukkit start
++        double prevX = this.getX();
++        double prevY = this.getY();
++        double prevZ = this.getZ();
++        float prevYaw = this.getYRot();
++        float prevPitch = this.getXRot();
++        // CraftBukkit end
+         if (this.getHurtTime() > 0) {
+             this.setHurtTime(this.getHurtTime() - 1);
+         }
+@@ -247,7 +_,7 @@
+         }
+ 
+         this.checkBelowWorld();
+-        this.handleNetherPortal();
++        // this.handleNetherPortal(); // CraftBukkit - handled in postTick
+         if (this.level().isClientSide) {
+             if (this.lerpSteps > 0) {
+                 this.lerpPositionAndRotationStep(this.lerpSteps, this.lerpX, this.lerpY, this.lerpZ, this.lerpYRot, this.lerpXRot);
 @@ -272,9 +_,9 @@
              BlockPos blockpos = new BlockPos(k, i, j);
              BlockState blockstate = this.level().getBlockState(blockpos);
@@ -61,7 +95,7 @@
                      this.activateMinecart(k, i, j, blockstate.getValue(PoweredRailBlock.POWERED));
                  }
              } else {
-@@ -299,8 +_,11 @@
+@@ -299,8 +_,23 @@
              }
  
              this.setRot(this.getYRot(), this.getXRot());
@@ -70,21 +104,75 @@
 +            AABB box;
 +            if (getCollisionHandler() != null) box = getCollisionHandler().getMinecartCollisionBox(this);
 +            else box = this.getBoundingBox().inflate(0.2F, 0.0D, 0.2F);
++            // CraftBukkit start
++            org.bukkit.World bworld = this.level().getWorld();
++            org.bukkit.Location from = new org.bukkit.Location(bworld, prevX, prevY, prevZ, prevYaw, prevPitch);
++            org.bukkit.Location to = org.bukkit.craftbukkit.v1_20_R3.util.CraftLocation.toBukkit(this.position(), bworld, this.getYRot(), this.getXRot());
++            org.bukkit.entity.Vehicle vehicle = (org.bukkit.entity.Vehicle) this.getBukkitEntity();
++
++            this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
++
++            if (!from.equals(to)) {
++                this.level().getCraftServer().getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, from, to));
++            }
++            // CraftBukkit end
 +            if (canBeRidden() && this.getDeltaMovement().horizontalDistanceSqr() > 0.01D) {
 +                List<Entity> list = this.level().getEntities(this, box, EntitySelector.pushableBy(this));
                  if (!list.isEmpty()) {
                      for(Entity entity1 : list) {
                          if (!(entity1 instanceof Player)
-@@ -315,7 +_,7 @@
+@@ -308,15 +_,41 @@
+                             && !(entity1 instanceof AbstractMinecart)
+                             && !this.isVehicle()
+                             && !entity1.isPassenger()) {
++                            // CraftBukkit start
++                            org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(vehicle, entity1.getBukkitEntity());
++                            this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
++
++                            if (collisionEvent.isCancelled()) {
++                                continue;
++                            }
++                            // CraftBukkit end
+                             entity1.startRiding(this);
+                         } else {
++                            // CraftBukkit start
++                            if (!this.isPassengerOfSameVehicle(entity1)) {
++                                org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(vehicle, entity1.getBukkitEntity());
++                                this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
++
++                                if (collisionEvent.isCancelled()) {
++                                    continue;
++                                }
++                            }
++                            // CraftBukkit end
+                             entity1.push(this);
+                         }
                      }
                  }
              } else {
 -                for(Entity entity : this.level().getEntities(this, this.getBoundingBox().inflate(0.2F, 0.0, 0.2F))) {
 +                for(Entity entity : this.level().getEntities(this, box)) {
                      if (!this.hasPassenger(entity) && entity.isPushable() && entity instanceof AbstractMinecart) {
++                        // CraftBukkit start
++                        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent(vehicle, entity.getBukkitEntity());
++                        this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
++
++                        if (collisionEvent.isCancelled()) {
++                            continue;
++                        }
++                        // CraftBukkit end
                          entity.push(this);
                      }
-@@ -340,16 +_,23 @@
+                 }
+@@ -333,23 +_,34 @@
+     }
+ 
+     protected double getMaxSpeed() {
+-        return (this.isInWater() ? 4.0 : 8.0) / 20.0;
++        return (this.isInWater() ? this.maxSpeed / 2.0D: this.maxSpeed); // CraftBukkit
+     }
+ 
+     public void activateMinecart(int p_38111_, int p_38112_, int p_38113_, boolean p_38114_) {
      }
  
      protected void comeOffTrack() {
@@ -93,20 +181,25 @@
          Vec3 vec3 = this.getDeltaMovement();
          this.setDeltaMovement(Mth.clamp(vec3.x, -d0, d0), vec3.y, Mth.clamp(vec3.z, -d0, d0));
          if (this.onGround()) {
-             this.setDeltaMovement(this.getDeltaMovement().scale(0.5));
-         }
- 
+-            this.setDeltaMovement(this.getDeltaMovement().scale(0.5));
++            // CraftBukkit start - replace magic numbers with our variables
++            this.setDeltaMovement(new Vec3(this.getDeltaMovement().x * this.derailedX, this.getDeltaMovement().y * this.derailedY, this.getDeltaMovement().z * this.derailedZ));
++            // CraftBukkit end
++        }
++
 +        if (getMaxSpeedAirVertical() > 0 && getDeltaMovement().y > getMaxSpeedAirVertical()) {
 +             if(Math.abs(getDeltaMovement().x) < 0.3f && Math.abs(getDeltaMovement().z) < 0.3f)
 +                  setDeltaMovement(new Vec3(getDeltaMovement().x, 0.15f, getDeltaMovement().z));
 +             else
 +                  setDeltaMovement(new Vec3(getDeltaMovement().x, getMaxSpeedAirVertical(), getDeltaMovement().z));
-+        }
-+
+         }
+ 
          this.move(MoverType.SELF, this.getDeltaMovement());
          if (!this.onGround()) {
 -            this.setDeltaMovement(this.getDeltaMovement().scale(0.95));
-+            this.setDeltaMovement(this.getDeltaMovement().scale(getDragAir()));
++            // CraftBukkit start - replace magic numbers with our variables
++            this.setDeltaMovement(new Vec3(this.getDeltaMovement().x * this.flyingX, this.getDeltaMovement().y * this.flyingY, this.getDeltaMovement().z * this.flyingZ));
++            // CraftBukkit end
          }
      }
  
@@ -166,6 +259,15 @@
              Vec3 vec36 = this.getDeltaMovement();
              double d27 = vec36.horizontalDistance();
              if (d27 > 0.01) {
+@@ -524,7 +_,7 @@
+     }
+ 
+     protected void applyNaturalSlowdown() {
+-        double d0 = this.isVehicle() ? 0.997 : 0.96;
++        double d0 = this.isVehicle() || !this.slowWhenEmpty ? 0.997D : 0.96D; // CraftBukkit - add !this.slowWhenEmpty
+         Vec3 vec3 = this.getDeltaMovement();
+         vec3 = vec3.multiply(d0, 0.0, d0);
+         if (this.isInWater()) {
 @@ -545,7 +_,7 @@
  
          BlockState blockstate = this.level().getBlockState(new BlockPos(i, j, k));
@@ -184,7 +286,7 @@
              Pair<Vec3i, Vec3i> pair = exits(railshape);
              Vec3i vec3i = pair.getFirst();
              Vec3i vec3i1 = pair.getSecond();
-@@ -648,6 +_,10 @@
+@@ -648,9 +_,21 @@
  
      @Override
      public void push(Entity p_38165_) {
@@ -195,6 +297,17 @@
          if (!this.level().isClientSide) {
              if (!p_38165_.noPhysics && !this.noPhysics) {
                  if (!this.hasPassenger(p_38165_)) {
++                    // CraftBukkit start
++                    org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent((org.bukkit.entity.Vehicle) this.getBukkitEntity(), p_38165_.getBukkitEntity());
++                    this.level().getCraftServer().getPluginManager().callEvent(collisionEvent);
++
++                    if (collisionEvent.isCancelled()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     double d0 = p_38165_.getX() - this.getX();
+                     double d1 = p_38165_.getZ() - this.getZ();
+                     double d2 = d0 * d0 + d1 * d1;
 @@ -686,13 +_,11 @@
  
                              Vec3 vec32 = this.getDeltaMovement();
@@ -211,11 +324,10 @@
                                  p_38165_.setDeltaMovement(vec33.multiply(0.2, 1.0, 0.2));
                                  p_38165_.push(vec32.x + d0, 0.0, vec32.z + d1);
                                  this.setDeltaMovement(vec32.multiply(0.95, 1.0, 0.95));
-@@ -791,6 +_,42 @@
-     public void setCustomDisplay(boolean p_38139_) {
+@@ -792,6 +_,42 @@
          this.getEntityData().set(DATA_ID_CUSTOM_DISPLAY, p_38139_);
      }
-+
+ 
 +    // Forge Start
 +    private boolean canUseRail = true;
 +    @Override public boolean canUseRail() { return canUseRail; }
@@ -251,6 +363,34 @@
 +        mc.move(MoverType.SELF, new Vec3(Mth.clamp(d24 * vec3d1.x, -d25, d25), 0.0D, Mth.clamp(d24 * vec3d1.z, -d25, d25)));
 +    }
 +    // Forge end
- 
++
      @Override
      public ItemStack getPickResult() {
+         return new ItemStack(switch(this.getMinecartType()) {
+@@ -813,4 +_,26 @@
+         HOPPER,
+         COMMAND_BLOCK;
+     }
++
++    // CraftBukkit start - Methods for getting and setting flying and derailed velocity modifiers
++    public org.bukkit.util.Vector getFlyingVelocityMod() {
++        return new org.bukkit.util.Vector(flyingX, flyingY, flyingZ);
++    }
++
++    public void setFlyingVelocityMod(org.bukkit.util.Vector flying) {
++        flyingX = flying.getX();
++        flyingY = flying.getY();
++        flyingZ = flying.getZ();
++    }
++
++    public org.bukkit.util.Vector getDerailedVelocityMod() {
++        return new org.bukkit.util.Vector(derailedX, derailedY, derailedZ);
++    }
++
++    public void setDerailedVelocityMod(org.bukkit.util.Vector derailed) {
++        derailedX = derailed.getX();
++        derailedY = derailed.getY();
++        derailedZ = derailed.getZ();
++    }
++    // CraftBukkit end
+ }

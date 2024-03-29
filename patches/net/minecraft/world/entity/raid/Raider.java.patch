@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/entity/raid/Raider.java
++++ b/net/minecraft/world/entity/raid/Raider.java
+@@ -154,6 +_,7 @@
+                     i = Mth.clamp(i, 0, 4);
+                     MobEffectInstance mobeffectinstance = new MobEffectInstance(MobEffects.BAD_OMEN, 120000, i, false, false, true);
+                     if (!this.level().getGameRules().getBoolean(GameRules.RULE_DISABLE_RAIDS)) {
++                        player.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.PATROL_CAPTAIN); //Ketting
+                         player.addEffect(mobeffectinstance);
+                     }
+                 }
+@@ -316,6 +_,8 @@
+             for(Raider raider : this.mob
+                 .level()
+                 .getNearbyEntities(Raider.class, this.shoutTargeting, this.mob, this.mob.getBoundingBox().inflate(8.0, 8.0, 8.0))) {
++                raider.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER);
++                raider.ketting$setTarget$fireEvent.set(true);
+                 raider.setTarget(this.mob.getTarget());
+             }
+         }
+@@ -328,7 +_,9 @@
+                 for(Raider raider : this.mob
+                     .level()
+                     .getNearbyEntities(Raider.class, this.shoutTargeting, this.mob, this.mob.getBoundingBox().inflate(8.0, 8.0, 8.0))) {
+-                    raider.setTarget(livingentity);
++                    raider.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER);
++                    raider.ketting$setTarget$fireEvent.set(true);
++                    raider.setTarget(this.mob.getTarget());
+                     raider.setAggressive(true);
+                 }
+ 

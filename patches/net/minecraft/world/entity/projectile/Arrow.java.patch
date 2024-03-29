@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/entity/projectile/Arrow.java
++++ b/net/minecraft/world/entity/projectile/Arrow.java
+@@ -43,6 +_,12 @@
+         super(EntityType.ARROW, p_308924_, p_36861_, p_309188_);
+     }
+ 
++    //Ketting start
++    public Arrow(Level p_36861_, LivingEntity p_310439_) {
++        super(EntityType.ARROW, p_310439_, p_36861_, DEFAULT_ARROW_STACK);
++    }
++    //Ketting end
++
+     public void setEffectsFromItem(ItemStack p_36879_) {
+         if (p_36879_.is(Items.TIPPED_ARROW)) {
+             this.potion = PotionUtils.getPotion(p_36879_);
+@@ -178,6 +_,7 @@
+         Entity entity = this.getEffectSource();
+ 
+         for(MobEffectInstance mobeffectinstance : this.potion.getEffects()) {
++            p_36873_.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW); //Ketting
+             p_36873_.addEffect(
+                 new MobEffectInstance(
+                     mobeffectinstance.getEffect(),
+@@ -192,6 +_,7 @@
+ 
+         if (!this.effects.isEmpty()) {
+             for(MobEffectInstance mobeffectinstance1 : this.effects) {
++                p_36873_.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW); //Ketting
+                 p_36873_.addEffect(mobeffectinstance1, entity);
+             }
+         }

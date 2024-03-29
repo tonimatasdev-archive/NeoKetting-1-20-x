@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/entity/projectile/SpectralArrow.java
++++ b/net/minecraft/world/entity/projectile/SpectralArrow.java
+@@ -22,6 +_,12 @@
+         super(EntityType.SPECTRAL_ARROW, p_309162_, p_37414_, p_309167_);
+     }
+ 
++    //Ketting start
++    public SpectralArrow(Level p_37414_, LivingEntity p_311904_) {
++        super(EntityType.SPECTRAL_ARROW, p_311904_, p_37414_, DEFAULT_ARROW_STACK);
++    }
++    //Ketting end
++
+     public SpectralArrow(Level p_37419_, double p_309044_, double p_309099_, double p_308873_, ItemStack p_308959_) {
+         super(EntityType.SPECTRAL_ARROW, p_309044_, p_309099_, p_308873_, p_37419_, p_308959_);
+     }
+@@ -38,6 +_,7 @@
+     protected void doPostHurtEffects(LivingEntity p_37422_) {
+         super.doPostHurtEffects(p_37422_);
+         MobEffectInstance mobeffectinstance = new MobEffectInstance(MobEffects.GLOWING, this.duration, 0);
++        p_37422_.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ARROW); //Ketting
+         p_37422_.addEffect(mobeffectinstance, this.getEffectSource());
+     }
+ 

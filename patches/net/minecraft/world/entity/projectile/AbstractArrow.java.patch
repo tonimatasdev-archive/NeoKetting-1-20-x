@@ -1,5 +1,24 @@
 --- a/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -68,6 +_,18 @@
+     private List<Entity> piercedAndKilledEntities;
+     private ItemStack pickupItemStack;
+ 
++    // Spigot Start
++    @Override
++    public void inactiveTick()
++    {
++        if ( this.inGround )
++        {
++            this.life += 1;
++        }
++        super.inactiveTick();
++    }
++    // Spigot End
++
+     protected AbstractArrow(EntityType<? extends AbstractArrow> p_36711_, Level p_36715_, ItemStack p_308982_) {
+         super(p_36711_, p_36715_);
+         this.pickupItemStack = p_308982_.copy();
 @@ -163,7 +_,7 @@
              --this.shakeTime;
          }
@@ -9,14 +28,65 @@
              this.clearFire();
          }
  
-@@ -199,7 +_,9 @@
+@@ -199,8 +_,10 @@
                      }
                  }
  
 -                if (hitresult != null && !flag) {
+-                    this.onHit(hitresult);
 +                if (hitresult != null && hitresult.getType() != HitResult.Type.MISS && !flag) {
 +                    if (net.neoforged.neoforge.event.EventHooks.onProjectileImpact(this, hitresult))
 +                        break;
-                     this.onHit(hitresult);
++                    this.preOnHit(hitresult); // CraftBukkit - projectile hit event
                      this.hasImpulse = true;
                  }
+ 
+@@ -288,7 +_,7 @@
+ 
+     protected void tickDespawn() {
+         ++this.life;
+-        if (this.life >= 1200) {
++        if (this.life >= ((this instanceof ThrownTrident) ? this.level().spigotConfig.tridentDespawnRate : this.level().spigotConfig.arrowDespawnRate)) { // Spigot
+             this.discard();
+         }
+     }
+@@ -346,7 +_,14 @@
+         int k = entity.getRemainingFireTicks();
+         boolean flag1 = entity.getType().is(EntityTypeTags.DEFLECTS_ARROWS);
+         if (this.isOnFire() && !flag && !flag1) {
+-            entity.setSecondsOnFire(5);
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityCombustByEntityEvent combustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5);
++            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
++            if (!combustEvent.isCancelled()) {
++                entity.ketting$setSecondsOnFire$callEvent.set(false);
++                entity.setSecondsOnFire(combustEvent.getDuration());
++            }
++            // CraftBukkit end
+         }
+ 
+         if (entity.hurt(damagesource, (float)i)) {
+@@ -518,7 +_,22 @@
+     @Override
+     public void playerTouch(Player p_36766_) {
+         if (!this.level().isClientSide && (this.inGround || this.isNoPhysics()) && this.shakeTime <= 0) {
+-            if (this.tryPickup(p_36766_)) {
++            // CraftBukkit start
++            ItemStack itemstack = this.getPickupItem();
++            if (this.pickup == AbstractArrow.Pickup.ALLOWED && !itemstack.isEmpty() && p_36766_.getInventory().canHold(itemstack) > 0) {
++                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
++                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) p_36766_.getBukkitEntity(), new org.bukkit.craftbukkit.v1_20_R3.entity.CraftItem(this.level().getCraftServer(), item), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
++                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
++                this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    return;
++                }
++                itemstack = item.getItem();
++            }
++
++            if ((this.pickup == AbstractArrow.Pickup.ALLOWED && p_36766_.getInventory().add(itemstack)) || (this.pickup == AbstractArrow.Pickup.CREATIVE_ONLY && p_36766_.getAbilities().instabuild)) {
++                // CraftBukkit end
+                 p_36766_.take(this, 1);
+                 this.discard();
+             }

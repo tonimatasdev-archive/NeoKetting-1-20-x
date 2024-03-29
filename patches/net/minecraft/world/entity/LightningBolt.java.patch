@@ -1,14 +1,15 @@
 --- a/net/minecraft/world/entity/LightningBolt.java
 +++ b/net/minecraft/world/entity/LightningBolt.java
-@@ -37,6 +_,7 @@
+@@ -37,6 +_,8 @@
      private ServerPlayer cause;
      private final Set<Entity> hitEntities = Sets.newHashSet();
      private int blocksSetOnFire;
 +    private float damage = 5.0F;
++    public boolean isSilent = false; // Spigot
  
      public LightningBolt(EntityType<? extends LightningBolt> p_20865_, Level p_20866_) {
          super(p_20865_, p_20866_);
-@@ -72,6 +_,14 @@
+@@ -72,10 +_,18 @@
          }
      }
  
@@ -23,6 +24,20 @@
      @Override
      public void tick() {
          super.tick();
+-        if (this.life == 2) {
++        if (!isSilent && this.life == 2) { // Spigot
+             if (this.level().isClientSide()) {
+                 this.level()
+                     .playLocalSound(
+@@ -138,7 +_,7 @@
+             }
+         }
+ 
+-        if (this.life >= 0) {
++        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.visualOnly
+             if (!(this.level() instanceof ServerLevel)) {
+                 this.level().setSkyFlashTime(2);
+             } else if (!this.visualOnly) {
 @@ -150,6 +_,7 @@
                      );
  
@@ -31,3 +46,32 @@
                      entity.thunderHit((ServerLevel)this.level(), this);
                  }
  
+@@ -171,16 +_,24 @@
+             BlockPos blockpos = this.blockPosition();
+             BlockState blockstate = BaseFireBlock.getState(this.level(), blockpos);
+             if (this.level().getBlockState(blockpos).isAir() && blockstate.canSurvive(this.level(), blockpos)) {
+-                this.level().setBlockAndUpdate(blockpos, blockstate);
+-                ++this.blocksSetOnFire;
++                // CraftBukkit start - add "!visualOnly"
++                if (!visualOnly && !org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockpos, this).isCancelled()) {
++                    this.level().setBlockAndUpdate(blockpos, blockstate);
++                    ++this.blocksSetOnFire;
++                }
++                // CraftBukkit end
+             }
+ 
+             for(int i = 0; i < p_20871_; ++i) {
+                 BlockPos blockpos1 = blockpos.offset(this.random.nextInt(3) - 1, this.random.nextInt(3) - 1, this.random.nextInt(3) - 1);
+                 blockstate = BaseFireBlock.getState(this.level(), blockpos1);
+                 if (this.level().getBlockState(blockpos1).isAir() && blockstate.canSurvive(this.level(), blockpos1)) {
+-                    this.level().setBlockAndUpdate(blockpos1, blockstate);
+-                    ++this.blocksSetOnFire;
++                    // CraftBukkit start - add "!visualOnly"
++                    if (!visualOnly && !org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callBlockIgniteEvent(this.level(), blockpos1, this).isCancelled()) {
++                        this.level().setBlockAndUpdate(blockpos1, blockstate);
++                        ++this.blocksSetOnFire;
++                    }
++                    // CraftBukkit end
+                 }
+             }
+         }
