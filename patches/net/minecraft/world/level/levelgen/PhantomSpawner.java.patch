@@ -28,3 +28,11 @@
  
                                              for(int i1 = 0; i1 < l; ++i1) {
                                                  Phantom phantom = EntityType.PHANTOM.create(p_64576_);
+@@ -65,6 +_,7 @@
+                                                     spawngroupdata = phantom.finalizeSpawn(
+                                                         p_64576_, difficultyinstance, MobSpawnType.NATURAL, spawngroupdata, null
+                                                     );
++                                                    p_64576_.prepareAddFreshEntityWithPassengers(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
+                                                     p_64576_.addFreshEntityWithPassengers(phantom);
+                                                     ++i;
+                                                 }

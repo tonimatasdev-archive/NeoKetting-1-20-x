@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/level/chunk/ChunkStatus.java
++++ b/net/minecraft/world/level/chunk/ChunkStatus.java
+@@ -49,7 +_,7 @@
+         PRE_FEATURES,
+         ChunkStatus.ChunkType.PROTOCHUNK,
+         (p_309516_, p_309517_, p_309518_, p_309519_, p_309520_, p_309521_, p_309522_, p_309523_, p_309524_) -> {
+-            if (p_309518_.getServer().getWorldData().worldGenOptions().generateStructures()) {
++            if (p_309518_.getServerLevelData().worldGenOptions().generateStructures()) { // CraftBukkit
+                 p_309519_.createStructures(
+                     p_309518_.registryAccess(), p_309518_.getChunkSource().getGeneratorState(), p_309518_.structureManager(), p_309524_, p_309520_
+                 );

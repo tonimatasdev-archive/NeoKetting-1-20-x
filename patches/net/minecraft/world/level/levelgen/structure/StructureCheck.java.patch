@@ -1,0 +1,24 @@
+--- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -139,7 +_,7 @@
+             if (i <= 1493) {
+                 return StructureCheckResult.CHUNK_LOAD_NEEDED;
+             } else {
+-                ChunkStorage.injectDatafixingContext(compoundtag, this.dimension, this.chunkGenerator.getTypeNameForDataFixer());
++                ChunkStorage.injectDatafixingContext(compoundtag, this.typeKey, this.chunkGenerator.getTypeNameForDataFixer());
+ 
+                 CompoundTag compoundtag1;
+                 try {
+@@ -238,4 +_,12 @@
+                 })
+             );
+     }
++
++    //Ketting start - type key
++    private ResourceKey<net.minecraft.world.level.dimension.LevelStem> typeKey;
++
++    public void setTypeKey(ResourceKey<net.minecraft.world.level.dimension.LevelStem> typeKey) {
++        this.typeKey = typeKey;
++    }
++    //Ketting end
+ }

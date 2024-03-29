@@ -1,0 +1,25 @@
+--- a/net/minecraft/world/level/levelgen/FlatLevelSource.java
++++ b/net/minecraft/world/level/levelgen/FlatLevelSource.java
+@@ -36,7 +_,13 @@
+     private final FlatLevelGeneratorSettings settings;
+ 
+     public FlatLevelSource(FlatLevelGeneratorSettings p_256337_) {
+-        super(new FixedBiomeSource(p_256337_.getBiome()), Util.memoize(p_256337_::adjustGenerationSettings));
++        // CraftBukkit start
++        this(p_256337_, new FixedBiomeSource(p_256337_.getBiome()));
++    }
++
++    public FlatLevelSource(FlatLevelGeneratorSettings p_256337_, net.minecraft.world.level.biome.BiomeSource manager) {
++        super(manager, Util.memoize(p_256337_::adjustGenerationSettings));
++        // CraftBukkit end
+         this.settings = p_256337_;
+     }
+ 
+@@ -49,6 +_,7 @@
+                 () -> p_256602_.listElements()
+                         .map((Function<? super Holder.Reference<StructureSet>, ? extends Holder.Reference<StructureSet>>)(p_255579_ -> p_255579_))
+             );
++        ChunkGeneratorStructureState.ketting$createFor$conf.set(ketting$createState$conf.getAndSet(null)); // Ketting
+         return ChunkGeneratorStructureState.createForFlat(p_255830_, p_256355_, this.biomeSource, stream);
+     }
+ 
