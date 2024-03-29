@@ -1,5 +1,22 @@
 --- a/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -37,6 +_,16 @@
+     private final EntityLookup<T> visibleEntityStorage;
+     final EntitySectionStorage<T> sectionStorage;
+     private final LevelEntityGetter<T> entityGetter;
++
++    // CraftBukkit start - add method to get all entities in chunk
++    public List<Entity> getEntities(ChunkPos pos) {
++        return sectionStorage.getExistingSectionsInChunk(pos.toLong()).flatMap(EntitySection::getEntities).map(entity -> (Entity) entity).collect(Collectors.toList());
++    }
++
++    public boolean isPending(long pair) {
++        return chunkLoadStatuses.get(pair) == PersistentEntitySectionManager.ChunkLoadStatus.PENDING;
++    }
++    // CraftBukkit end
+     private final Long2ObjectMap<Visibility> chunkVisibility = new Long2ObjectOpenHashMap<>();
+     private final Long2ObjectMap<PersistentEntitySectionManager.ChunkLoadStatus> chunkLoadStatuses = new Long2ObjectOpenHashMap<>();
+     private final LongSet chunksToUnload = new LongOpenHashSet();
 @@ -71,7 +_,16 @@
          return this.addEntity(p_157534_, false);
      }
@@ -37,7 +54,51 @@
      }
  
      void startTicking(T p_157565_) {
-@@ -228,7 +_,10 @@
+@@ -171,6 +_,13 @@
+         }
+     }
+ 
++    private final java.util.concurrent.atomic.AtomicBoolean ketting$storeChunkSections$callEvent = new java.util.concurrent.atomic.AtomicBoolean(false);
++    private boolean storeChunkSections(long p_157513_, Consumer<T> p_157514_, boolean callEvent) {
++        ketting$storeChunkSections$callEvent.set(callEvent);
++        // CraftBukkit start - add boolean for event call
++        return storeChunkSections(p_157513_, p_157514_);
++    }
++
+     private boolean storeChunkSections(long p_157513_, Consumer<T> p_157514_) {
+         PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager$chunkloadstatus = this.chunkLoadStatuses.get(p_157513_);
+         if (persistententitysectionmanager$chunkloadstatus == PersistentEntitySectionManager.ChunkLoadStatus.PENDING) {
+@@ -182,16 +_,21 @@
+                 .collect(Collectors.toList());
+             if (list.isEmpty()) {
+                 if (persistententitysectionmanager$chunkloadstatus == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
++                    if (ketting$storeChunkSections$callEvent.get()) org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntitiesUnloadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) permanentStorage).level, new ChunkPos(p_157513_), ImmutableList.of()); // CraftBukkit
+                     this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(p_157513_), ImmutableList.of()));
+                 }
+ 
++                ketting$storeChunkSections$callEvent.set(false);
+                 return true;
+             } else if (persistententitysectionmanager$chunkloadstatus == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
++                ketting$storeChunkSections$callEvent.set(false);
+                 this.requestChunkLoad(p_157513_);
+                 return false;
+             } else {
++                if (ketting$storeChunkSections$callEvent.get()) org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntitiesUnloadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) permanentStorage).level, new ChunkPos(p_157513_), list.stream().map(entity -> (Entity) entity).collect(Collectors.toList())); // CraftBukkit
+                 this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(p_157513_), list));
+                 list.forEach(p_157514_);
++                ketting$storeChunkSections$callEvent.set(false);
+                 return true;
+             }
+         }
+@@ -207,6 +_,7 @@
+     }
+ 
+     private boolean processChunkUnload(long p_157569_) {
++        ketting$storeChunkSections$callEvent.set(true);
+         boolean flag = this.storeChunkSections(p_157569_, p_157595_ -> p_157595_.getPassengersAndSelf().forEach(this::unloadEntity));
+         if (!flag) {
+             return false;
+@@ -228,8 +_,15 @@
      private void processPendingLoads() {
          ChunkEntities<T> chunkentities;
          while((chunkentities = this.loadingInbox.poll()) != null) {
@@ -47,7 +108,29 @@
 +                if (p_157593_ instanceof Entity entity) entity.onAddedToWorld();
 +            });
              this.chunkLoadStatuses.put(chunkentities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
++            // CraftBukkit start - call entity load event
++            List<Entity> entities = getEntities(chunkentities.getPos());
++            org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntitiesLoadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) permanentStorage).level, chunkentities.getPos(), entities);
++            // CraftBukkit end
          }
+     }
+ 
+@@ -278,8 +_,16 @@
+         this.permanentStorage.flush(true);
+     }
+ 
++    //Ketting start
++    public final java.util.concurrent.atomic.AtomicBoolean ketting$close$save = new java.util.concurrent.atomic.AtomicBoolean(true);
++    public void close(boolean save) throws IOException {
++        ketting$close$save.set(save);
++        close();
++    }
+     @Override
+     public void close() throws IOException {
++        if(ketting$close$save.getAndSet(true))
++        //Ketting end
+         this.saveAll();
+         this.permanentStorage.close();
      }
 @@ -367,11 +_,13 @@
  

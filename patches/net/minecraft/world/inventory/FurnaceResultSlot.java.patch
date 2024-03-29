@@ -1,6 +1,15 @@
 --- a/net/minecraft/world/inventory/FurnaceResultSlot.java
 +++ b/net/minecraft/world/inventory/FurnaceResultSlot.java
-@@ -53,5 +_,6 @@
+@@ -48,10 +_,15 @@
+         if (playerx instanceof ServerPlayer serverplayer) {
+             Container container = this.container;
+             if (container instanceof AbstractFurnaceBlockEntity abstractfurnaceblockentity) {
++                // Ketting start
++                abstractfurnaceblockentity.ketting$awardUsedRecipesAndPopExperience$itemstack.set(p_39558_);
++                abstractfurnaceblockentity.ketting$awardUsedRecipesAndPopExperience$amount.set(this.removeCount);
++                // Ketting end
+                 abstractfurnaceblockentity.awardUsedRecipesAndPopExperience(serverplayer);
+             }
          }
  
          this.removeCount = 0;

@@ -1,0 +1,10 @@
+--- a/net/minecraft/world/inventory/ItemCombinerMenu.java
++++ b/net/minecraft/world/inventory/ItemCombinerMenu.java
+@@ -119,6 +_,7 @@
+ 
+     @Override
+     public boolean stillValid(Player p_39780_) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.access
+             .evaluate(
+                 (p_39785_, p_39786_) -> !this.isValidBlock(p_39785_.getBlockState(p_39786_))

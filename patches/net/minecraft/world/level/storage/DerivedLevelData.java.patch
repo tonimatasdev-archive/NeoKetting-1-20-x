@@ -1,0 +1,48 @@
+--- a/net/minecraft/world/level/storage/DerivedLevelData.java
++++ b/net/minecraft/world/level/storage/DerivedLevelData.java
+@@ -14,12 +_,23 @@
+ public class DerivedLevelData implements ServerLevelData {
+     private final WorldData worldData;
+     private final ServerLevelData wrapped;
++    //Ketting start
++    private net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.LevelStem> typeKey;
++
++    public void setTypeKey(net.minecraft.resources.ResourceKey<net.minecraft.world.level.dimension.LevelStem> typeKey) {
++        this.typeKey = typeKey;
++    }
++    //Ketting end
+ 
+     public DerivedLevelData(WorldData p_78079_, ServerLevelData p_78080_) {
+         this.worldData = p_78079_;
+         this.wrapped = p_78080_;
+     }
+ 
++    public ServerLevelData getDelegate() {
++        return wrapped;
++    }
++
+     @Override
+     public int getXSpawn() {
+         return this.wrapped.getXSpawn();
+@@ -52,7 +_,20 @@
+ 
+     @Override
+     public String getLevelName() {
+-        return this.worldData.getLevelName();
++        if (typeKey == null || typeKey == net.minecraft.world.level.dimension.LevelStem.OVERWORLD) {
++            return this.wrapped.getLevelName();
++        } else {
++            String worldName = this.wrapped.getLevelName() + "/";
++            String suffix;
++            if (typeKey == net.minecraft.world.level.dimension.LevelStem.END) {
++                suffix = "DIM1";
++            } else if (typeKey == net.minecraft.world.level.dimension.LevelStem.NETHER) {
++                suffix = "DIM-1";
++            } else {
++                suffix = typeKey.location().getNamespace() + "/" + typeKey.location().getPath();
++            }
++            return worldName + suffix;
++        }
+     }
+ 
+     @Override

@@ -1,0 +1,45 @@
+--- a/net/minecraft/world/Container.java
++++ b/net/minecraft/world/Container.java
+@@ -91,4 +_,42 @@
+                 <= (double)(p_273411_ * p_273411_);
+         }
+     }
++
++    // CraftBukkit start
++    java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<org.bukkit.entity.HumanEntity>(); //Ketting - adding a new field like this is not ideal, but this provides the most correctness
++    default java.util.List<ItemStack> getContents() {
++        return java.util.Collections.emptyList();
++    }
++
++    default void onOpen(org.bukkit.craftbukkit.v1_20_R3.entity.CraftHumanEntity who){
++        transaction.add(who);
++    }
++
++    default void onClose(org.bukkit.craftbukkit.v1_20_R3.entity.CraftHumanEntity who){
++        transaction.remove(who);
++    }
++
++    default java.util.List<org.bukkit.entity.HumanEntity> getViewers(){
++        return transaction;
++    }
++
++    default @javax.annotation.Nullable org.bukkit.inventory.InventoryHolder getOwner(){
++        return null;
++    }
++
++    default void setMaxStackSize(int size){}
++
++    default @javax.annotation.Nullable org.bukkit.Location getLocation(){
++        return null;
++    }
++
++    default @javax.annotation.Nullable net.minecraft.world.item.crafting.RecipeHolder<?> getCurrentRecipe() {
++        return null;
++    }
++
++    default void setCurrentRecipe(net.minecraft.world.item.crafting.RecipeHolder<?> recipe) {
++    }
++
++    int MAX_STACK = 64;
++    // CraftBukkit end
+ }

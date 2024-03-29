@@ -1,17 +1,73 @@
 --- a/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -544,6 +_,14 @@
-         }
+@@ -477,6 +_,7 @@
+         return this.previouslyKilled;
      }
  
++    public boolean ketting$tryRespawn$result = false;
+     public void tryRespawn() {
+         if (this.dragonKilled && this.respawnStage == null) {
+             BlockPos blockpos = this.portalLocation;
+@@ -499,6 +_,8 @@
+             for(Direction direction : Direction.Plane.HORIZONTAL) {
+                 List<EndCrystal> list = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockpos1.relative(direction, 2)));
+                 if (list.isEmpty()) {
++                    ketting$tryRespawn$result = false;
++                    // CraftBukkit - return value
+                     return;
+                 }
+ 
+@@ -507,10 +_,20 @@
+ 
+             LOGGER.debug("Found all crystals, respawning dragon.");
+             this.respawnDragon(list1);
++            // CraftBukkit - return value
++            ketting$tryRespawn$result = ketting$respawnDragon$returnValue;
++            return;
+         }
++        // CraftBukkit - return value
++        ketting$tryRespawn$result = false;
++        return;
+     }
+ 
+-    private void respawnDragon(List<EndCrystal> p_64092_) {
++    // Ketting don't change the returntype
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public boolean ketting$respawnDragon$returnValue = false;
++    // CraftBukkit - return boolean 
++    public void respawnDragon(List<EndCrystal> p_64092_) {
+         if (this.dragonKilled && this.respawnStage == null) {
+             for(BlockPattern.BlockPatternMatch blockpattern$blockpatternmatch = this.findExitPortal();
+                 blockpattern$blockpatternmatch != null;
+@@ -532,7 +_,16 @@
+             this.respawnTime = 0;
+             this.spawnExitPortal(false);
+             this.respawnCrystals = p_64092_;
++            // CraftBukkit - return value
++            // Ketting
++            ketting$respawnDragon$returnValue = true;
++            return;
+         }
++        
++        // CraftBukkit - return value
++        // Ketting
++        ketting$respawnDragon$returnValue = false;
++        return;
+     }
+ 
+     public void resetSpikeCrystals() {
+@@ -542,6 +_,14 @@
+                 endcrystal.setBeamTarget(null);
+             }
+         }
++    }
++
 +    public void addPlayer(ServerPlayer player) {
 +        this.dragonEvent.addPlayer(player);
 +    }
 +
 +    public void removePlayer(ServerPlayer player) {
 +        this.dragonEvent.removePlayer(player);
-+    }
-+
+     }
+ 
      @Nullable
-     public UUID getDragonUUID() {
-         return this.dragonUUID;

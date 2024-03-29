@@ -11,6 +11,19 @@
                      BiomeGenerationSettings.CODEC.forGetter(p_220548_ -> p_220548_.generationSettings),
                      MobSpawnSettings.CODEC.forGetter(p_220546_ -> p_220546_.mobSettings)
                  )
+@@ -49,6 +_,12 @@
+                 )
+                 .apply(p_220540_, (p_220535_, p_220536_) -> new Biome(p_220535_, p_220536_, BiomeGenerationSettings.EMPTY, MobSpawnSettings.EMPTY))
+     );
++
++    //Ketting start - fix transformer error
++    public Biome.ClimateSettings getClimateSettings() {
++        return this.climateSettings;
++    }
++    //Ketting end
+     public static final Codec<Holder<Biome>> CODEC = RegistryFileCodec.create(Registries.BIOME, DIRECT_CODEC);
+     public static final Codec<HolderSet<Biome>> LIST_CODEC = RegistryCodecs.homogeneousList(Registries.BIOME, DIRECT_CODEC);
+     private static final PerlinSimplexNoise TEMPERATURE_NOISE = new PerlinSimplexNoise(new WorldgenRandom(new LegacyRandomSource(1234L)), ImmutableList.of(0));
 @@ -60,9 +_,11 @@
      )
      public static final PerlinSimplexNoise BIOME_INFO_NOISE = new PerlinSimplexNoise(new WorldgenRandom(new LegacyRandomSource(2345L)), ImmutableList.of(0));

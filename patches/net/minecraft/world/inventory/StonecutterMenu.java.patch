@@ -1,0 +1,72 @@
+--- a/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -34,15 +_,23 @@
+     final Slot resultSlot;
+     Runnable slotUpdateListener = () -> {
+     };
+-    public final Container container = new SimpleContainer(1) {
+-        @Override
+-        public void setChanged() {
+-            super.setChanged();
+-            StonecutterMenu.this.slotsChanged(this);
+-            StonecutterMenu.this.slotUpdateListener.run();
++    public final Container container;
++    final ResultContainer resultContainer;
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView bukkitEntity = null;
++    private org.bukkit.entity.Player player;
++
++    @Override
++    public org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView getBukkitView() {
++        if (bukkitEntity != null) {
++            return bukkitEntity;
+         }
+-    };
+-    final ResultContainer resultContainer = new ResultContainer();
++
++        org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryStonecutter inventory = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryStonecutter(this.container, this.resultContainer);
++        bukkitEntity = new org.bukkit.craftbukkit.v1_20_R3.inventory.CraftInventoryView(this.player, inventory, this);
++        return bukkitEntity;
++    }
++    // CraftBukkit end
+ 
+     public StonecutterMenu(int p_40294_, Inventory p_40295_) {
+         this(p_40294_, p_40295_, ContainerLevelAccess.NULL);
+@@ -50,6 +_,21 @@
+ 
+     public StonecutterMenu(int p_40297_, Inventory p_40298_, final ContainerLevelAccess p_40299_) {
+         super(MenuType.STONECUTTER, p_40297_);
++        this.container = new SimpleContainer(1) {
++            public void setChanged() {
++                super.setChanged();
++                StonecutterMenu.this.slotsChanged(this);
++                StonecutterMenu.this.slotUpdateListener.run();
++            }
++
++            // CraftBukkit start
++            @Override
++            public org.bukkit.Location getLocation() {
++                return p_40299_.getLocation();
++            }
++            // CraftBukkit end
++        };
++        this.resultContainer = new ResultContainer();
+         this.access = p_40299_;
+         this.level = p_40298_.player.level();
+         this.inputSlot = this.addSlot(new Slot(this.container, 0, 20, 33));
+@@ -94,6 +_,7 @@
+         }
+ 
+         this.addDataSlot(this.selectedRecipeIndex);
++        player = (org.bukkit.entity.Player) p_40298_.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     public int getSelectedRecipeIndex() {
+@@ -114,6 +_,7 @@
+ 
+     @Override
+     public boolean stillValid(Player p_40307_) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, p_40307_, Blocks.STONECUTTER);
+     }
+ 
