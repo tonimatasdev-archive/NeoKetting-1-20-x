@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/Shulker.java
 +++ b/net/minecraft/world/entity/monster/Shulker.java
-@@ -391,6 +_,12 @@
+@@ -391,6 +_,20 @@
                      && this.level().noCollision(this, new AABB(blockpos1).deflate(1.0E-6))) {
                      Direction direction = this.findAttachableSurface(blockpos1);
                      if (direction != null) {
@@ -10,6 +10,22 @@
 +                    }
 +
 +                    if (direction != null) {
++                        // CraftBukkit start
++                        org.bukkit.event.entity.EntityTeleportEvent teleportEvent = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTeleportEvent(this, blockpos1.getX(), blockpos1.getY(), blockpos1.getZ());
++                        if (teleportEvent.isCancelled()) {
++                            return false;
++                        } else {
++                            blockpos1 = org.bukkit.craftbukkit.v1_20_R3.util.CraftLocation.toBlockPosition(teleportEvent.getTo());
++                        }
++                        // CraftBukkit end
                          this.unRide();
                          this.setAttachFace(direction);
                          this.playSound(SoundEvents.SHULKER_TELEPORT, 1.0F, 1.0F);
+@@ -456,6 +_,7 @@
+                 if (shulker != null) {
+                     shulker.setVariant(this.getVariant());
+                     shulker.moveTo(vec3);
++                    this.level().prepareAddFreshEntity(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING);
+                     this.level().addFreshEntity(shulker);
+                 }
+             }

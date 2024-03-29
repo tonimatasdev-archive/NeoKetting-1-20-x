@@ -1,11 +1,14 @@
 --- a/net/minecraft/world/entity/monster/Skeleton.java
 +++ b/net/minecraft/world/entity/monster/Skeleton.java
-@@ -86,7 +_,9 @@
+@@ -86,7 +_,12 @@
      }
  
      protected void doFreezeConversion() {
 -        this.convertTo(EntityType.STRAY, true);
 +        if (!net.neoforged.neoforge.event.EventHooks.canLivingConvert(this, EntityType.STRAY, (timer) -> this.conversionTime = timer)) return;
++        // CraftBukkit - add spawn and transform reasons
++        ketting$convertTo$transformReason.set(org.bukkit.event.entity.EntityTransformEvent.TransformReason.FROZEN); //Ketting
++        ketting$convertTo$spawnReason.set(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FROZEN); //Ketting
 +        Stray stray = this.convertTo(EntityType.STRAY, true);
 +        if (stray != null) net.neoforged.neoforge.event.EventHooks.onLivingConvert(this, stray);
          if (!this.isSilent()) {

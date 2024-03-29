@@ -1,7 +1,11 @@
 --- a/net/minecraft/world/entity/animal/SnowGolem.java
 +++ b/net/minecraft/world/entity/animal/SnowGolem.java
-@@ -95,7 +_,7 @@
-                 this.hurt(this.damageSources().onFire(), 1.0F);
+@@ -92,10 +_,10 @@
+         super.aiStep();
+         if (!this.level().isClientSide) {
+             if (this.level().getBiome(this.blockPosition()).is(BiomeTags.SNOW_GOLEM_MELTS)) {
+-                this.hurt(this.damageSources().onFire(), 1.0F);
++                this.hurt(this.damageSources().melting, 1.0F); // CraftBukkit - DamageSource.BURN -> org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.MELTING
              }
  
 -            if (!this.level().getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
@@ -9,6 +13,21 @@
                  return;
              }
  
+@@ -106,8 +_,12 @@
+                 int k = Mth.floor(this.getY());
+                 int l = Mth.floor(this.getZ() + (double)((float)(i / 2 % 2 * 2 - 1) * 0.25F));
+                 BlockPos blockpos = new BlockPos(j, k, l);
+-                if (this.level().getBlockState(blockpos).isAir() && blockstate.canSurvive(this.level(), blockpos)) {
+-                    this.level().setBlockAndUpdate(blockpos, blockstate);
++                if (this.level().isEmptyBlock(blockpos) && blockstate.canSurvive(this.level(), blockpos)) {
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockpos, blockstate, this)) {
++                        continue;
++                    }
++                    // CraftBukkit end
+                     this.level().gameEvent(GameEvent.BLOCK_PLACE, blockpos, GameEvent.Context.of(this, blockstate));
+                 }
+             }
 @@ -135,7 +_,7 @@
      @Override
      protected InteractionResult mobInteract(Player p_29920_, InteractionHand p_29921_) {
@@ -18,3 +37,13 @@
              this.shear(SoundSource.PLAYERS);
              this.gameEvent(GameEvent.SHEAR, p_29920_);
              if (!this.level().isClientSide) {
+@@ -153,7 +_,9 @@
+         this.level().playSound(null, this, SoundEvents.SNOW_GOLEM_SHEAR, p_29907_, 1.0F, 1.0F);
+         if (!this.level().isClientSide()) {
+             this.setPumpkin(false);
++            this.forceDrops = true; // CraftBukkit
+             this.spawnAtLocation(new ItemStack(Items.CARVED_PUMPKIN), 1.7F);
++            this.forceDrops = false; // CraftBukkit
+         }
+     }
+ 

@@ -1,0 +1,13 @@
+--- a/net/minecraft/world/entity/monster/Phantom.java
++++ b/net/minecraft/world/entity/monster/Phantom.java
+@@ -267,6 +_,10 @@
+ 
+                     for(Player player : list) {
+                         if (Phantom.this.canAttack(player, TargetingConditions.DEFAULT)) {
++                            // Ketting start
++                            Phantom.this.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER);
++                            Phantom.this.ketting$setTarget$fireEvent.set(true);
++                            // Ketting end
+                             Phantom.this.setTarget(player);
+                             return true;
+                         }

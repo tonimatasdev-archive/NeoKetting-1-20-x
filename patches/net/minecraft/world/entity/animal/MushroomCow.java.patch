@@ -9,7 +9,7 @@
              this.shear(SoundSource.PLAYERS);
              this.gameEvent(GameEvent.SHEAR, p_28941_);
              if (!this.level().isClientSide) {
-@@ -167,8 +_,10 @@
+@@ -167,10 +_,12 @@
      public void shear(SoundSource p_28924_) {
          this.level().playSound(null, this, SoundEvents.MOOSHROOM_SHEAR, p_28924_, 1.0F, 1.0F);
          if (!this.level().isClientSide()) {
@@ -18,19 +18,42 @@
              if (cow != null) {
 +                net.neoforged.neoforge.event.EventHooks.onLivingConvert(this, cow);
                  ((ServerLevel)this.level()).sendParticles(ParticleTypes.EXPLOSION, this.getX(), this.getY(0.5), this.getZ(), 1, 0.0, 0.0, 0.0, 0.0);
-                 this.discard();
+-                this.discard();
++                // this.discard(); // CraftBukkit - moved down
                  cow.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
-@@ -187,10 +_,9 @@
+                 cow.setHealth(this.getHealth());
+                 cow.yBodyRot = this.yBodyRot;
+@@ -184,13 +_,29 @@
+                 }
+ 
+                 cow.setInvulnerable(this.isInvulnerable());
++                // CraftBukkit start
++                if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTransformEvent(this, cow, org.bukkit.event.entity.EntityTransformEvent.TransformReason.SHEARED).isCancelled()) {
++                    return;
++                }
++                this.level().prepareAddFreshEntity(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SHEARED);
                  this.level().addFreshEntity(cow);
  
++                this.discard(); // CraftBukkit - from above
++                // CraftBukkit end
++                
                  for(int i = 0; i < 5; ++i) {
 -                    this.level()
 -                        .addFreshEntity(
 -                            new ItemEntity(this.level(), this.getX(), this.getY(1.0), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock()))
 -                        );
 +                    //Neo: Change from addFreshEntity to spawnAtLocation to ensure captureDrops can capture this, we also need to unset the default pickup delay from the item
-+                    ItemEntity item = spawnAtLocation(new ItemStack(this.getVariant().blockState.getBlock()), getBbHeight());
-+                    if (item != null) item.setNoPickUpDelay();
++                    // CraftBukkit start
++                    ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), this.getY(1.0D), this.getZ(), new ItemStack(this.getVariant().blockState.getBlock()));
++                    org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) itemEntity.getBukkitEntity());
++                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                    if (event.isCancelled()) {
++                        continue;
++                    }
++                    this.level().addFreshEntity(itemEntity);
++                    // CraftBukkit end
++                    
++                    if (itemEntity != null) itemEntity.setNoPickUpDelay();
                  }
              }
          }

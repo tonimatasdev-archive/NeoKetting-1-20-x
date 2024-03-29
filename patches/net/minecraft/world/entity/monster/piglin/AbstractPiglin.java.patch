@@ -12,7 +12,12 @@
              this.playConvertedSound();
              this.finishConversion((ServerLevel)this.level());
          }
-@@ -117,6 +_,7 @@
+@@ -114,9 +_,12 @@
+     }
+ 
+     protected void finishConversion(ServerLevel p_34663_) {
++        ketting$convertTo$transformReason.set(org.bukkit.event.entity.EntityTransformEvent.TransformReason.PIGLIN_ZOMBIFIED); // Ketting
++        ketting$convertTo$spawnReason.set(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.PIGLIN_ZOMBIFIED); // Ketting
          ZombifiedPiglin zombifiedpiglin = this.convertTo(EntityType.ZOMBIFIED_PIGLIN, true);
          if (zombifiedpiglin != null) {
              zombifiedpiglin.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));

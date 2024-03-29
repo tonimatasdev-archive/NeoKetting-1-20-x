@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java
++++ b/net/minecraft/world/entity/ai/goal/target/NearestAttackableTargetGoal.java
+@@ -74,6 +_,8 @@
+ 
+     @Override
+     public void start() {
++        mob.ketting$setTarget$reason.set(target instanceof ServerPlayer ? org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER : org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
++        mob.ketting$setTarget$fireEvent.set(true);
+         this.mob.setTarget(this.target);
+         super.start();
+     }

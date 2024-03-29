@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ai/behavior/StartAttacking.java
 +++ b/net/minecraft/world/entity/ai/behavior/StartAttacking.java
-@@ -32,7 +_,11 @@
+@@ -32,7 +_,22 @@
                                      if (!p_258774_.canAttack(livingentity)) {
                                          return false;
                                      } else {
@@ -8,8 +8,19 @@
 +                                        net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent changeTargetEvent = net.neoforged.neoforge.common.CommonHooks.onLivingChangeTarget(p_258774_, livingentity, net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent.LivingTargetType.BEHAVIOR_TARGET);
 +                                        if (changeTargetEvent.isCanceled())
 +                                            return false;
-+
-+                                        p_258778_.set(changeTargetEvent.getNewTarget());
++                                        // CraftBukkit start
++                                        org.bukkit.event.entity.EntityTargetEvent event = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTargetLivingEvent(p_258774_, changeTargetEvent.getNewTarget(), (changeTargetEvent.getNewTarget() instanceof net.minecraft.server.level.ServerPlayer) ? org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER : org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_ENTITY); //Ketting - forge compat
++                                        if (event.isCancelled()) {
++                                            return false;
++                                        }
++                                        if (event.getTarget() == null) {
++                                            p_258779_.erase();
++                                            return true;
++                                        }
++                                        livingentity = ((org.bukkit.craftbukkit.v1_20_R3.entity.CraftLivingEntity) event.getTarget()).getHandle();
++                                        // CraftBukkit end
++                                        p_258778_.set(livingentity); //Ketting
++                                        
                                          p_258779_.erase();
                                          return true;
                                      }
