@@ -9,12 +9,25 @@
      public static final int DEFAULT_NBT_QUOTA = 2097152;
      private final ByteBuf source;
      public static final short MAX_STRING_LENGTH = 32767;
-@@ -572,9 +_,10 @@
+@@ -538,7 +_,7 @@
+         try {
+             NbtIo.writeAnyTag(p_296432_, new ByteBufOutputStream(this));
+             return this;
+-        } catch (IOException ioexception) {
++        } catch (Exception ioexception) { // CraftBukkit - IOException -> Exception
+             throw new EncoderException(ioexception);
+         }
+     }
+@@ -572,9 +_,14 @@
              this.writeId(BuiltInRegistries.ITEM, item);
              this.writeByte(p_130056_.getCount());
              CompoundTag compoundtag = null;
 -            if (item.canBeDepleted() || item.shouldOverrideMultiplayerNbt()) {
 +            if (item.isDamageable(p_130056_) || item.shouldOverrideMultiplayerNbt()) {
++                // Spigot start - filter
++                p_130056_ = p_130056_.copy();
++                org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.setItemMeta(p_130056_, org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.getItemMeta(p_130056_));
++                // Spigot end
                  compoundtag = p_130056_.getTag();
              }
 +            compoundtag = net.neoforged.neoforge.attachment.AttachmentInternals.addAttachmentsToTag(compoundtag, p_130056_, false);

@@ -1,6 +1,32 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -110,6 +_,7 @@
+@@ -79,6 +_,11 @@
+     private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
+     private Channel channel;
+     private SocketAddress address;
++    // Spigot Start
++    public java.util.UUID spoofedUUID;
++    public com.mojang.authlib.properties.Property[] spoofedProfile;
++    public boolean preparing = true;
++    // Spigot End
+     @Nullable
+     private volatile PacketListener disconnectListener;
+     @Nullable
+@@ -97,6 +_,7 @@
+     private volatile Component delayedDisconnect;
+     @Nullable
+     BandwidthDebugMonitor bandwidthDebugMonitor;
++    public String hostname = ""; // CraftBukkit - add field
+ 
+     public Connection(PacketFlow p_129482_) {
+         this.receiving = p_129482_;
+@@ -107,9 +_,13 @@
+         super.channelActive(p_129525_);
+         this.channel = p_129525_.channel();
+         this.address = this.channel.remoteAddress();
++        // Spigot Start
++        this.preparing = false;
++        // Spigot End
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
@@ -31,7 +57,15 @@
                      if (flag) {
                          LOGGER.debug("Failed to sent packet", p_129534_);
                          if (this.getSending() == PacketFlow.CLIENTBOUND) {
-@@ -380,7 +_,7 @@
+@@ -155,6 +_,7 @@
+                 }
+             }
+         }
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) p_129534_.printStackTrace(); // Spigot
+     }
+ 
+     protected void channelRead0(ChannelHandlerContext p_129487_, Packet<?> p_129488_) {
+@@ -380,11 +_,14 @@
          if (this.address == null) {
              return "local";
          } else {
@@ -40,6 +74,13 @@
          }
      }
  
+     public void disconnect(Component p_129508_) {
++        // Spigot Start
++        this.preparing = false;
++        // Spigot End
+         if (this.channel == null) {
+             this.delayedDisconnect = p_129508_;
+         }
 @@ -419,6 +_,7 @@
      }
  

@@ -1,0 +1,97 @@
+--- a/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
+@@ -8,6 +_,17 @@
+ import net.minecraft.world.level.block.DispenserBlock;
+ 
+ public class DefaultDispenseItemBehavior implements DispenseItemBehavior {
++
++    // CraftBukkit start
++    private boolean dropper;
++
++    public DefaultDispenseItemBehavior(boolean dropper) {
++        this.dropper = dropper;
++    }
++    // CraftBukkit end
++
++    public DefaultDispenseItemBehavior() {}
++
+     @Override
+     public final ItemStack dispense(BlockSource p_302432_, ItemStack p_123392_) {
+         ItemStack itemstack = this.execute(p_302432_, p_123392_);
+@@ -20,11 +_,68 @@
+         Direction direction = p_302420_.state().getValue(DispenserBlock.FACING);
+         Position position = DispenserBlock.getDispensePosition(p_302420_);
+         ItemStack itemstack = p_123386_.split(1);
++        ketting$spawnItem$source = p_302420_; //Ketting
++        ketting$spawnItem$dropper.set(dropper); //Ketting
+         spawnItem(p_302420_.level(), itemstack, 6, direction, position);
++        // CraftBukkit start
++        if (!ketting$spawnItem$result.get()) {
++            p_123386_.grow(1);
++        }
++        // CraftBukkit end
++        ketting$spawnItem$source = null; // Ketting
+         return p_123386_;
+     }
+ 
++    // Ketting start - use original function
++    private static final java.util.concurrent.atomic.AtomicBoolean ketting$spawnItem$result = new java.util.concurrent.atomic.AtomicBoolean(true);
++    private static @org.jetbrains.annotations.Nullable BlockSource ketting$spawnItem$source = null;
++    private static final java.util.concurrent.atomic.AtomicBoolean ketting$spawnItem$dropper = new java.util.concurrent.atomic.AtomicBoolean(false);
++    @SuppressWarnings("unused")
++    public static boolean spawnItem(Level p_123379_, ItemStack p_123380_, int p_123381_, Direction p_123382_, BlockSource p_123383_, boolean dropper) {
++        Position position = DispenserBlock.getDispensePosition(p_123383_);
++        ketting$spawnItem$source = p_123383_;
++        ketting$spawnItem$dropper.set(dropper);
++        spawnItem(p_123379_, p_123380_, p_123381_, p_123382_, position);
++        ketting$spawnItem$source = null;
++        return ketting$spawnItem$result.get();
++    }
++    private static void ketting$spawnItem(Level p_123379_, ItemStack p_123380_, ItemEntity itementity){
++        if (ketting$spawnItem$source != null) {
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.v1_20_R3.block.CraftBlock.at(p_123379_, ketting$spawnItem$source.pos());
++            org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asCraftMirror(p_123380_);
++
++            org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), org.bukkit.craftbukkit.v1_20_R3.util.CraftVector.toBukkit(itementity.getDeltaMovement()));
++            if (!DispenserBlock.eventFired) {
++                p_123379_.getCraftServer().getPluginManager().callEvent(event);
++            }
++
++            if (event.isCancelled()) {
++                ketting$spawnItem$result.set(false);
++                return;
++            }
++
++            itementity.setItem(org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asNMSCopy(event.getItem()));
++            itementity.setDeltaMovement(org.bukkit.craftbukkit.v1_20_R3.util.CraftVector.toNMS(event.getVelocity()));
++
++            if (!ketting$spawnItem$dropper.getAndSet(false) && !event.getItem().getType().equals(craftItem.getType())) {
++                // Chain to handler for new item
++                ItemStack eventStack = org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asNMSCopy(event.getItem());
++                DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
++                if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior.getClass() != DefaultDispenseItemBehavior.class) {
++                    idispensebehavior.dispense(ketting$spawnItem$source, eventStack);
++                } else {
++                    p_123379_.addFreshEntity(itementity);
++                }
++                ketting$spawnItem$result.set(false);
++                return;
++            }
++        }
++    }
++    // Ketting end
++
+     public static void spawnItem(Level p_123379_, ItemStack p_123380_, int p_123381_, Direction p_123382_, Position p_123383_) {
++        ketting$spawnItem$result.set(true); // Ketting
++        if (p_123380_.isEmpty()) return; // Ketting?
+         double d0 = p_123383_.x();
+         double d1 = p_123383_.y();
+         double d2 = p_123383_.z();
+@@ -41,6 +_,7 @@
+             p_123379_.random.triangle(0.2, 0.0172275 * (double)p_123381_),
+             p_123379_.random.triangle((double)p_123382_.getStepZ() * d3, 0.0172275 * (double)p_123381_)
+         );
++        ketting$spawnItem(p_123379_, p_123380_, itementity); // Ketting
+         p_123379_.addFreshEntity(itementity);
+     }
+ 

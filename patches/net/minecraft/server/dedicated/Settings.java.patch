@@ -1,11 +1,106 @@
 --- a/net/minecraft/server/dedicated/Settings.java
 +++ b/net/minecraft/server/dedicated/Settings.java
-@@ -66,7 +_,7 @@
+@@ -26,13 +_,37 @@
+ public abstract class Settings<T extends Settings<T>> {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     protected final Properties properties;
++    // CraftBukkit start
++    private joptsimple.OptionSet options = null;
+ 
++    //Ketting start - keep compat
+     public Settings(Properties p_139801_) {
++        this(p_139801_, new joptsimple.OptionParser().parse());
++    }
++
++    //Ketting end - keep compat
++    public Settings(Properties p_139801_, final joptsimple.OptionSet options) {
+         this.properties = p_139801_;
+-    }
+-
++        this.options = options;
++    }
++
++    private String getOverride(String name, String value) {
++        if ((this.options != null) && (this.options.has(name)) && !name.equals( "online-mode")) { // Spigot
++            return String.valueOf(this.options.valueOf(name));
++        }
++
++        return value;
++        // CraftBukkit end
++    }
++    
+     public static Properties loadFromFile(Path p_139840_) {
+         try {
++            // CraftBukkit start - SPIGOT-7465, MC-264979: Don't load if file doesn't exist
++            if (!p_139840_.toFile().exists()) {
++                return new Properties();
++            }
++            // CraftBukkit end
++            
+             try {
+                 Properties properties3;
+                 try (InputStream inputstream = Files.newInputStream(p_139840_)) {
+@@ -65,8 +_,13 @@
+     }
  
      public void store(Path p_139877_) {
++        // CraftBukkit start - Don't attempt writing to file if it's read only
++        if (p_139877_.toFile().exists() && !p_139877_.toFile().canWrite()) {
++            return;
++        }
++        // CraftBukkit end
          try (Writer writer = Files.newBufferedWriter(p_139877_, StandardCharsets.UTF_8)) {
 -            this.properties.store(writer, "Minecraft server properties");
 +            net.neoforged.neoforge.common.util.SortedProperties.store(this.properties, writer, "Minecraft server properties");
          } catch (IOException ioexception) {
              LOGGER.error("Failed to store properties to file: {}", p_139877_);
          }
+@@ -94,7 +_,7 @@
+ 
+     @Nullable
+     private String getStringRaw(String p_139879_) {
+-        return (String)this.properties.get(p_139879_);
++        return (String) getOverride(p_139879_, this.properties.getProperty(p_139879_)); // CraftBukkit
+     }
+ 
+     @Nullable
+@@ -109,6 +_,16 @@
+     }
+ 
+     protected <V> V get(String p_139822_, Function<String, V> p_139823_, Function<V, String> p_139824_, V p_139825_) {
++        // CraftBukkit start
++        try {
++            return get0(p_139822_, p_139823_, p_139824_, p_139825_);
++        } catch (Exception ex) {
++            throw new RuntimeException("Could not load invalidly configured property '" + p_139822_ + "'", ex);
++        }
++    }
++
++    private <V> V get0(String p_139822_, Function<String, V> p_139823_, Function<V, String> p_139824_, V p_139825_) {
++        // CraftBukkit end
+         String s = this.getStringRaw(p_139822_);
+         V v = MoreObjects.firstNonNull(s != null ? p_139823_.apply(s) : null, p_139825_);
+         this.properties.put(p_139822_, p_139824_.apply(v));
+@@ -181,7 +_,12 @@
+         return properties;
+     }
+ 
+-    protected abstract T reload(RegistryAccess p_139857_, Properties p_139858_);
++    //Ketting start - keep compat
++    protected @org.jetbrains.annotations.Nullable T reload(RegistryAccess p_139857_, Properties p_139858_){
++        return reload(p_139857_, p_139858_, Settings.this.options);
++    }
++    //Ketting end - keep compat
++    protected @org.jetbrains.annotations.Nullable T reload(RegistryAccess p_139857_, Properties p_139858_, joptsimple.OptionSet optionset){ return null; } // CraftBukkit
+ 
+     public class MutableValue<V> implements Supplier<V> {
+         private final String key;
+@@ -202,7 +_,7 @@
+         public T update(RegistryAccess p_139896_, V p_139897_) {
+             Properties properties = Settings.this.cloneProperties();
+             properties.put(this.key, this.serializer.apply(p_139897_));
+-            return Settings.this.reload(p_139896_, properties);
++            return Settings.this.reload(p_139896_, properties, Settings.this.options); // CraftBukkit
+         }
+     }
+ }

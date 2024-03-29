@@ -22,11 +22,12 @@
                  Tag tag = CompoundTag.readNamedTagData(TagTypes.getType(b0), s, p_302338_, p_302362_);
                  if (map.put(s, tag) == null) {
                      p_302362_.accountBytes(36L);
-@@ -211,6 +_,7 @@
+@@ -211,6 +_,8 @@
  
      @Nullable
      public Tag put(String p_128366_, Tag p_128367_) {
-+        if (p_128367_ == null) throw new IllegalArgumentException("Invalid null NBT value with key " + p_128366_);
++        if (p_128367_ == null && org.kettingpowered.ketting.config.KettingConfig.getInstance().WARN_ON_NULL_NBT.getValue())
++            org.kettingpowered.ketting.core.Ketting.LOGGER.warn("Tried to add null tag with key " + p_128366_ + " to CompoundTag", new IllegalArgumentException("Invalid null NBT value with key " + p_128366_));
          return this.tags.put(p_128366_, p_128367_);
      }
  

@@ -1,8 +1,33 @@
 --- a/net/minecraft/network/protocol/common/ClientboundCustomPayloadPacket.java
 +++ b/net/minecraft/network/protocol/common/ClientboundCustomPayloadPacket.java
-@@ -53,10 +_,43 @@
-         .put(WorldGenAttemptDebugPayload.ID, WorldGenAttemptDebugPayload::new)
-         .build();
+@@ -29,44 +_,57 @@
+ 
+ public record ClientboundCustomPayloadPacket(CustomPacketPayload payload) implements Packet<ClientCommonPacketListener> {
+     private static final int MAX_PAYLOAD_SIZE = 1048576;
+-    public static final Map<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>> KNOWN_TYPES = ImmutableMap.<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>>builder(
+-            
+-        )
+-        .put(BrandPayload.ID, BrandPayload::new)
+-        .put(BeeDebugPayload.ID, BeeDebugPayload::new)
+-        .put(BrainDebugPayload.ID, BrainDebugPayload::new)
+-        .put(BreezeDebugPayload.ID, BreezeDebugPayload::new)
+-        .put(GameEventDebugPayload.ID, GameEventDebugPayload::new)
+-        .put(GameEventListenerDebugPayload.ID, GameEventListenerDebugPayload::new)
+-        .put(GameTestAddMarkerDebugPayload.ID, GameTestAddMarkerDebugPayload::new)
+-        .put(GameTestClearMarkersDebugPayload.ID, GameTestClearMarkersDebugPayload::new)
+-        .put(GoalDebugPayload.ID, GoalDebugPayload::new)
+-        .put(HiveDebugPayload.ID, HiveDebugPayload::new)
+-        .put(NeighborUpdatesDebugPayload.ID, NeighborUpdatesDebugPayload::new)
+-        .put(PathfindingDebugPayload.ID, PathfindingDebugPayload::new)
+-        .put(PoiAddedDebugPayload.ID, PoiAddedDebugPayload::new)
+-        .put(PoiRemovedDebugPayload.ID, PoiRemovedDebugPayload::new)
+-        .put(PoiTicketCountDebugPayload.ID, PoiTicketCountDebugPayload::new)
+-        .put(RaidsDebugPayload.ID, RaidsDebugPayload::new)
+-        .put(StructuresDebugPayload.ID, StructuresDebugPayload::new)
+-        .put(VillageSectionsDebugPayload.ID, VillageSectionsDebugPayload::new)
+-        .put(WorldGenAttemptDebugPayload.ID, WorldGenAttemptDebugPayload::new)
+-        .build();
++    private static final Map<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>> KNOWN_TYPES = ImmutableMap.<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>>builder().build(); // CraftBukkit - no special handling
  
 +    /**
 +     * @deprecated Use {@link #ClientboundCustomPayloadPacket(FriendlyByteBuf, io.netty.channel.ChannelHandlerContext, net.minecraft.network.ConnectionProtocol)} instead, as this variant can only read vanilla payloads.
@@ -44,3 +69,32 @@
      private static CustomPacketPayload readPayload(ResourceLocation p_294802_, FriendlyByteBuf p_294886_) {
          FriendlyByteBuf.Reader<? extends CustomPacketPayload> reader = KNOWN_TYPES.get(p_294802_);
          return (CustomPacketPayload)(reader != null ? reader.apply(p_294886_) : readUnknownPayload(p_294802_, p_294886_));
+     }
+ 
+-    private static DiscardedPayload readUnknownPayload(ResourceLocation p_295991_, FriendlyByteBuf p_295803_) {
++    private static UnknownPayload readUnknownPayload(ResourceLocation p_295991_, FriendlyByteBuf p_295803_) { // CraftBukkit
+         int i = p_295803_.readableBytes();
+         if (i >= 0 && i <= 1048576) {
+             p_295803_.skipBytes(i);
+-            return new DiscardedPayload(p_295991_);
++            // CraftBukkit start
++            return new UnknownPayload(p_295991_, p_295803_.readBytes(i));
++            // CraftBukkit end
+         } else {
+             throw new IllegalArgumentException("Payload may not be larger than 1048576 bytes");
+         }
+@@ -81,4 +_,14 @@
+     public void handle(ClientCommonPacketListener p_295761_) {
+         p_295761_.handleCustomPayload(this);
+     }
++
++    // CraftBukkit start
++    public record UnknownPayload(ResourceLocation id, io.netty.buffer.ByteBuf data) implements CustomPacketPayload {
++
++        @Override
++        public void write(FriendlyByteBuf packetdataserializer) {
++            packetdataserializer.writeBytes(data);
++        }
++    }
++    // CraftBukkit end
+ }

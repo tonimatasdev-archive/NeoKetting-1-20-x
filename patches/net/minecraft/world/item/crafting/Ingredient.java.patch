@@ -6,6 +6,9 @@
      private IntList stackingIds;
 -    public static final Codec<Ingredient> CODEC = codec(true);
 -    public static final Codec<Ingredient> CODEC_NONEMPTY = codec(false);
+-
+-    public Ingredient(Stream<? extends Ingredient.Value> p_43907_) {
+-        this.values = p_43907_.toArray(p_43933_ -> new Ingredient.Value[p_43933_]);
 +    private final java.util.function.Supplier<? extends net.neoforged.neoforge.common.crafting.IngredientType<?>> type;
 +
 +    public static final Codec<Ingredient> VANILLA_CODEC = codec(true);
@@ -14,9 +17,8 @@
 +    public static final Codec<Ingredient> CODEC_NONEMPTY = net.neoforged.neoforge.common.crafting.CraftingHelper.makeIngredientCodec(false, VANILLA_CODEC_NONEMPTY);
 +    public static final Codec<List<Ingredient>> LIST_CODEC = CODEC.listOf();
 +    public static final Codec<List<Ingredient>> LIST_CODEC_NONEMPTY = CODEC_NONEMPTY.listOf();
- 
-     protected Ingredient(Stream<? extends Ingredient.Value> p_43907_) {
--        this.values = p_43907_.toArray(p_43933_ -> new Ingredient.Value[p_43933_]);
++
++    protected Ingredient(Stream<? extends Ingredient.Value> p_43907_) {
 +        this(p_43907_, net.neoforged.neoforge.common.NeoForgeMod.VANILLA_INGREDIENT_TYPE);
      }
  

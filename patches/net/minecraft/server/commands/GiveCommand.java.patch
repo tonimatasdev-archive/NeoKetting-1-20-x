@@ -1,0 +1,12 @@
+--- a/net/minecraft/server/commands/GiveCommand.java
++++ b/net/minecraft/server/commands/GiveCommand.java
+@@ -68,7 +_,8 @@
+                     boolean flag = serverplayer.getInventory().add(itemstack1);
+                     if (flag && itemstack1.isEmpty()) {
+                         itemstack1.setCount(1);
+-                        ItemEntity itementity1 = serverplayer.drop(itemstack1, false);
++                        serverplayer.ketting$drop$callEvent.set(false); // Ketting - SPIGOT-2942: Add boolean to call event
++                        ItemEntity itementity1 = serverplayer.drop(itemstack1, false, false);
+                         if (itementity1 != null) {
+                             itementity1.makeFakeItem();
+                         }

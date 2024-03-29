@@ -1,0 +1,11 @@
+--- a/net/minecraft/world/entity/monster/Guardian.java
++++ b/net/minecraft/world/entity/monster/Guardian.java
+@@ -375,7 +_,7 @@
+         return new Vector3f(0.0F, p_294519_.height + 0.125F * p_295088_, 0.0F);
+     }
+ 
+-    public static class GuardianAttackGoal extends Goal {
++    static class GuardianAttackGoal extends Goal {
+         private final Guardian guardian;
+         private int attackTime;
+         private final boolean elder;

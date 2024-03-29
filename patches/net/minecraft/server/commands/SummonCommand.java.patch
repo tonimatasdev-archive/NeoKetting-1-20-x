@@ -1,0 +1,10 @@
+--- a/net/minecraft/server/commands/SummonCommand.java
++++ b/net/minecraft/server/commands/SummonCommand.java
+@@ -97,6 +_,7 @@
+                         );
+                 }
+ 
++                serverlevel.ketting$tryAddFreshEntityWithPassengers$spawnReason.set(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.COMMAND);  // Ketting - CraftBukkit - pass a spawn reason of "COMMAND"
+                 if (!serverlevel.tryAddFreshEntityWithPassengers(entity)) {
+                     throw ERROR_DUPLICATE_UUID.create();
+                 } else {

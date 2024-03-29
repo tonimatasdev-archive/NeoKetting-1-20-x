@@ -71,6 +71,20 @@
          if (p_263514_ == this.minecraft.player) {
              this.minecraft.getSoundManager().play(new EntityBoundSoundInstance(p_263518_.value(), p_263487_, p_263538_, p_263524_, p_263536_, p_263509_));
          }
+@@ -889,6 +_,13 @@
+     public void gameEvent(GameEvent p_233639_, Vec3 p_233640_, GameEvent.Context p_233641_) {
+     }
+ 
++    // Ketting start
++    @Override
++    public net.minecraft.server.level.ServerLevel getMinecraftWorld() {
++        return null;
++    }
++    // Ketting end
++
+     protected Map<String, MapItemSavedData> getAllMapData() {
+         return ImmutableMap.copyOf(this.mapData);
+     }
 @@ -1054,6 +_,7 @@
          }
  
