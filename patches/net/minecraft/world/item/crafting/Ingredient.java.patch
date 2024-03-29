@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/crafting/Ingredient.java
 +++ b/net/minecraft/world/item/crafting/Ingredient.java
-@@ -34,15 +_,35 @@
+@@ -34,15 +_,36 @@
      private ItemStack[] itemStacks;
      @Nullable
      private IntList stackingIds;
@@ -9,6 +9,7 @@
 -
 -    public Ingredient(Stream<? extends Ingredient.Value> p_43907_) {
 -        this.values = p_43907_.toArray(p_43933_ -> new Ingredient.Value[p_43933_]);
++    public boolean exact; // CraftBukkit
 +    private final java.util.function.Supplier<? extends net.neoforged.neoforge.common.crafting.IngredientType<?>> type;
 +
 +    public static final Codec<Ingredient> VANILLA_CODEC = codec(true);
@@ -41,11 +42,20 @@
      }
  
      public ItemStack[] getItems() {
-@@ -63,7 +_,7 @@
+@@ -63,7 +_,16 @@
              return p_43914_.isEmpty();
          } else {
              for(ItemStack itemstack : this.getItems()) {
 -                if (itemstack.is(p_43914_.getItem())) {
++                // CraftBukkit start
++                if (exact) {
++                    if (itemstack.getItem() == p_43914_.getItem() && ItemStack.isSameItemSameTags(p_43914_, itemstack)) {
++                        return true;
++                    }
++
++                    continue;
++                }
++                // CraftBukkit end
 +                if (areStacksEqual(itemstack, p_43914_)) {
                      return true;
                  }

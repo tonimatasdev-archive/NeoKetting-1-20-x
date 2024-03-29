@@ -1,0 +1,10 @@
+--- a/net/minecraft/world/item/enchantment/DamageEnchantment.java
++++ b/net/minecraft/world/item/enchantment/DamageEnchantment.java
+@@ -64,6 +_,7 @@
+     public void doPostAttack(LivingEntity p_44638_, Entity p_44639_, int p_44640_) {
+         if (p_44639_ instanceof LivingEntity livingentity && this.type == 2 && p_44640_ > 0 && livingentity.getMobType() == MobType.ARTHROPOD) {
+             int i = 20 + p_44638_.getRandom().nextInt(10 * p_44640_);
++            livingentity.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK); //Ketting
+             livingentity.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, i, 3));
+         }
+     }

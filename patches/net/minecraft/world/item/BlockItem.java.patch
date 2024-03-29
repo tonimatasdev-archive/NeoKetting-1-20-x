@@ -1,19 +1,57 @@
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
-@@ -82,11 +_,11 @@
+@@ -63,6 +_,12 @@
+                 return InteractionResult.FAIL;
+             } else {
+                 BlockState blockstate = this.getPlacementState(blockplacecontext);
++                // CraftBukkit start - special case for handling block placement with water lilies and snow buckets
++                org.bukkit.block.BlockState bblockstate = null;
++                if (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem) {
++                    bblockstate = org.bukkit.craftbukkit.v1_20_R3.block.CraftBlockStates.getBlockState(blockplacecontext.getLevel(), blockplacecontext.getClickedPos());
++                }
++                // CraftBukkit end
+                 if (blockstate == null) {
+                     return InteractionResult.FAIL;
+                 } else if (!this.placeBlock(blockplacecontext, blockstate)) {
+@@ -77,22 +_,28 @@
+                         blockstate1 = this.updateBlockStateFromTag(blockpos, level, itemstack, blockstate1);
+                         this.updateCustomBlockEntityTag(blockpos, level, player, itemstack, blockstate1);
+                         blockstate1.getBlock().setPlacedBy(level, blockpos, blockstate1, player, itemstack);
++                        // CraftBukkit start
++                        if (bblockstate != null) {
++                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callBlockPlaceEvent((net.minecraft.server.level.ServerLevel) level, player, blockplacecontext.getHand(), bblockstate, blockpos.getX(), blockpos.getY(), blockpos.getZ());
++                            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
++                                bblockstate.update(true, false);
++
++                                if (this instanceof SolidBucketItem) {
++                                    ((ServerPlayer) player).getBukkitEntity().updateInventory(); // SPIGOT-4541
++                                }
++                                return InteractionResult.FAIL;
++                            }
++                        }
++                        // CraftBukkit end
+                         if (player instanceof ServerPlayer) {
+                             CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer)player, blockpos, itemstack);
                          }
                      }
  
 -                    SoundType soundtype = blockstate1.getSoundType();
-+                    SoundType soundtype = blockstate1.getSoundType(level, blockpos, p_40577_.getPlayer());
-                     level.playSound(
-                         player,
-                         blockpos,
+-                    level.playSound(
+-                        player,
+-                        blockpos,
 -                        this.getPlaceSound(blockstate1),
-+                        this.getPlaceSound(blockstate1, level, blockpos, p_40577_.getPlayer()),
-                         SoundSource.BLOCKS,
-                         (soundtype.getVolume() + 1.0F) / 2.0F,
-                         soundtype.getPitch() * 0.8F
+-                        SoundSource.BLOCKS,
+-                        (soundtype.getVolume() + 1.0F) / 2.0F,
+-                        soundtype.getPitch() * 0.8F
+-                    );
++                    SoundType soundtype = blockstate1.getSoundType(level, blockpos, p_40577_.getPlayer());
++                    // level.playSound(player, blockpos, this.getPlaceSound(blockstate1, level, blockpos, p_40577_.getPlayer()), SoundSource.BLOCKS, (soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
+                     level.gameEvent(GameEvent.BLOCK_PLACE, blockpos, GameEvent.Context.of(player, blockstate1));
+-                    if (player == null || !player.getAbilities().instabuild) {
++                    if ((player == null || !player.getAbilities().instabuild) && itemstack != ItemStack.EMPTY) { // CraftBukkit
+                         itemstack.shrink(1);
+                     }
+ 
 @@ -102,10 +_,16 @@
          }
      }
@@ -31,6 +69,73 @@
      @Nullable
      public BlockPlaceContext updatePlacementContext(BlockPlaceContext p_40609_) {
          return p_40609_;
+@@ -126,15 +_,9 @@
+         CompoundTag compoundtag = p_40605_.getTag();
+         if (compoundtag != null) {
+             CompoundTag compoundtag1 = compoundtag.getCompound("BlockStateTag");
+-            StateDefinition<Block, BlockState> statedefinition = p_40606_.getBlock().getStateDefinition();
+ 
+-            for(String s : compoundtag1.getAllKeys()) {
+-                Property<?> property = statedefinition.getProperty(s);
+-                if (property != null) {
+-                    String s1 = compoundtag1.get(s).getAsString();
+-                    blockstate = updateState(blockstate, property, s1);
+-                }
+-            }
++            // CraftBukkit start
++            blockstate = getBlockState(blockstate, compoundtag1);
+         }
+ 
+         if (blockstate != p_40606_) {
+@@ -144,6 +_,21 @@
+         return blockstate;
+     }
+ 
++    public static BlockState getBlockState(BlockState iblockdata, CompoundTag compoundtag1) {
++        BlockState iblockdata1 = iblockdata;
++        // CraftBukkit end
++        StateDefinition<Block, BlockState> statedefinition = iblockdata.getBlock().getStateDefinition();
++
++        for (String s : compoundtag1.getAllKeys()) {
++            Property<?> property = statedefinition.getProperty(s);
++            if (property != null) {
++                String s1 = compoundtag1.get(s).getAsString();
++                iblockdata1 = updateState(iblockdata1, property, s1);
++            }
++        }
++        return iblockdata1;
++    }
++
+     private static <T extends Comparable<T>> BlockState updateState(BlockState p_40594_, Property<T> p_40595_, String p_40596_) {
+         return p_40595_.getValue(p_40596_).map(p_40592_ -> p_40594_.setValue(p_40595_, p_40592_)).orElse(p_40594_);
+     }
+@@ -151,8 +_,15 @@
+     protected boolean canPlace(BlockPlaceContext p_40611_, BlockState p_40612_) {
+         Player player = p_40611_.getPlayer();
+         CollisionContext collisioncontext = player == null ? CollisionContext.empty() : CollisionContext.of(player);
+-        return (!this.mustSurvive() || p_40612_.canSurvive(p_40611_.getLevel(), p_40611_.getClickedPos()))
+-            && p_40611_.getLevel().isUnobstructed(p_40612_, p_40611_.getClickedPos(), collisioncontext);
++        // CraftBukkit start - store default return
++        boolean defaultReturn = (!this.mustSurvive() || p_40612_.canSurvive(p_40611_.getLevel(), p_40611_.getClickedPos())) && p_40611_.getLevel().isUnobstructed(p_40612_, p_40611_.getClickedPos(), collisioncontext);
++        org.bukkit.entity.Player playerBukkit = (p_40611_.getPlayer() instanceof ServerPlayer) ? (org.bukkit.entity.Player) p_40611_.getPlayer().getBukkitEntity() : null;
++
++        org.bukkit.event.block.BlockCanBuildEvent event = new org.bukkit.event.block.BlockCanBuildEvent(org.bukkit.craftbukkit.v1_20_R3.block.CraftBlock.at(p_40611_.getLevel(), p_40611_.getClickedPos()), playerBukkit, org.bukkit.craftbukkit.v1_20_R3.block.data.CraftBlockData.fromData(p_40612_), defaultReturn);
++        p_40611_.getLevel().getCraftServer().getPluginManager().callEvent(event);
++
++        return event.isBuildable();
++        // CraftBukkit end
+     }
+ 
+     protected boolean mustSurvive() {
+@@ -172,7 +_,7 @@
+             if (compoundtag != null) {
+                 BlockEntity blockentity = p_40583_.getBlockEntity(p_40585_);
+                 if (blockentity != null) {
+-                    if (!p_40583_.isClientSide && blockentity.onlyOpCanSetNbt() && (p_40584_ == null || !p_40584_.canUseGameMasterBlocks())) {
++                    if (!p_40583_.isClientSide && blockentity.onlyOpCanSetNbt() && (p_40584_ == null || !(p_40584_.canUseGameMasterBlocks() || (p_40584_.getAbilities().instabuild && p_40584_.getBukkitEntity().hasPermission("minecraft.nbt.place"))))) { // Spigot - add permission
+                         return false;
+                     }
+ 
 @@ -208,6 +_,10 @@
  
      public void registerBlocks(Map<Block, Item> p_40607_, Item p_40608_) {

@@ -1,11 +1,22 @@
 --- a/net/minecraft/world/item/BoneMealItem.java
 +++ b/net/minecraft/world/item/BoneMealItem.java
-@@ -38,7 +_,7 @@
+@@ -33,12 +_,17 @@
+         super(p_40626_);
+     }
+ 
+-    @Override
+     public InteractionResult useOn(UseOnContext p_40637_) {
++        // CraftBukkit start - extract bonemeal application logic to separate, static method
++        return applyBonemeal(p_40637_);
++    }
++
++    public static InteractionResult applyBonemeal(UseOnContext p_40637_) {
++        // CraftBukkit end
          Level level = p_40637_.getLevel();
          BlockPos blockpos = p_40637_.getClickedPos();
          BlockPos blockpos1 = blockpos.relative(p_40637_.getClickedFace());
 -        if (growCrop(p_40637_.getItemInHand(), level, blockpos)) {
-+        if (applyBonemeal(p_40637_.getItemInHand(), level, blockpos, p_40637_.getPlayer())) {
++        if (applyBonemeal(p_40637_.getItemInHand(), level, blockpos, p_40637_.getPlayer())) { //Ketting - pass player
              if (!level.isClientSide) {
                  p_40637_.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH);
                  level.levelEvent(1505, blockpos, 0);
