@@ -1,0 +1,14 @@
+--- a/net/minecraft/world/entity/npc/ClientSideMerchant.java
++++ b/net/minecraft/world/entity/npc/ClientSideMerchant.java
+@@ -52,6 +_,11 @@
+     }
+ 
+     @Override
++    public org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchant getCraftMerchant() {
++        return null;
++    }
++
++    @Override
+     public int getVillagerXp() {
+         return this.xp;
+     }
