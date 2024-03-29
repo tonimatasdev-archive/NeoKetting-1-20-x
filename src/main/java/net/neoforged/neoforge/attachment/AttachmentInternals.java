@@ -57,6 +57,11 @@ public final class AttachmentInternals {
             itemstack = new ItemStack(item, count);
         }
         itemstack.setTag(tag);
+        // CraftBukkit start
+        if (itemstack.getTag() != null) {
+            org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.setItemMeta(itemstack, org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.getItemMeta(itemstack));
+        }
+        // CraftBukkit end
         return itemstack;
     }
 

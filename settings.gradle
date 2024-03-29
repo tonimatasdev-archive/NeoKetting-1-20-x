@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenLocal()
+        maven { url = 'https://nexus.c0d3m4513r.com/repository/Magma/' } // Ketting
         maven { url = 'https://maven.neoforged.net/releases' }
     }
 }
