@@ -20,11 +20,13 @@
              }
          }
  
-@@ -60,6 +_,6 @@
+@@ -60,6 +_,8 @@
  
      default boolean isIncomplete() {
          NonNullList<Ingredient> nonnulllist = this.getIngredients();
 -        return nonnulllist.isEmpty() || nonnulllist.stream().anyMatch(p_151268_ -> p_151268_.getItems().length == 0);
 +        return nonnulllist.isEmpty() || nonnulllist.stream().anyMatch(net.neoforged.neoforge.common.CommonHooks::hasNoElements);
      }
++
++    default @org.jetbrains.annotations.Nullable org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id) { return null; } // CraftBukkit
  }

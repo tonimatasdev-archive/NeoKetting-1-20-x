@@ -1,12 +1,18 @@
 --- a/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -45,17 +_,23 @@
+@@ -45,33 +_,76 @@
      }
  
      protected void apply(Map<ResourceLocation, JsonElement> p_44037_, ResourceManager p_44038_, ProfilerFiller p_44039_) {
 +        var ops = this.makeConditionalOps();
          this.hasErrors = false;
-         Map<RecipeType<?>, Builder<ResourceLocation, RecipeHolder<?>>> map = Maps.newHashMap();
+-        Map<RecipeType<?>, Builder<ResourceLocation, RecipeHolder<?>>> map = Maps.newHashMap();
++        // CraftBukkit start - SPIGOT-5667 make sure all types are populated and mutable
++        Map<RecipeType<?>, Map<ResourceLocation, RecipeHolder<?>>> map = Maps.newHashMap();
++        for (RecipeType<?> recipeType : net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE) {
++            map.put(recipeType, new java.util.HashMap<>());
++        }
++        // CraftBukkit end
          Builder<ResourceLocation, RecipeHolder<?>> builder = ImmutableMap.builder();
  
          for(Entry<ResourceLocation, JsonElement> entry : p_44037_.entrySet()) {
@@ -19,7 +25,9 @@
 -                builder.put(resourcelocation, recipeholder);
 +                Optional<RecipeHolder<?>> recipeHolderOptional = fromJson(resourcelocation, GsonHelper.convertToJsonObject(entry.getValue(), "top element"), ops);
 +                recipeHolderOptional.ifPresentOrElse(recipeholder -> {
-+                    map.computeIfAbsent(recipeholder.value().getType(), p_44075_ -> ImmutableMap.builder()).put(resourcelocation, recipeholder);
++                    map.computeIfAbsent(recipeholder.value().getType(), (p_44075_) -> {
++                        return new java.util.HashMap<>(); //CraftBukkit
++                    }).put(resourcelocation, recipeholder);
 +                    builder.put(resourcelocation, recipeholder);
 +                }, () -> {
 +                    LOGGER.debug("Skipping loading recipe {} as it's conditions were not met", resourcelocation);
@@ -27,6 +35,63 @@
              } catch (IllegalArgumentException | JsonParseException jsonparseexception) {
                  LOGGER.error("Parsing error loading recipe {}", resourcelocation, jsonparseexception);
              }
+         }
+ 
+         this.recipes = map.entrySet().stream().collect(ImmutableMap.toImmutableMap(Entry::getKey, p_44033_ -> ((Builder)p_44033_.getValue()).build()));
+-        this.byName = builder.build();
++        this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
+         LOGGER.info("Loaded {} recipes", map.size());
+     }
+ 
++    // CraftBukkit start
++    public void addRecipe(RecipeHolder<?> irecipe) {
++        org.spigotmc.AsyncCatcher.catchOp("Recipe Add"); // Spigot
++        it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<ResourceLocation, RecipeHolder<?>> map = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(this.recipes.get(irecipe.value().getType())); //Ketting - type
++
++        if (byName.containsKey(irecipe.id()) || map.containsKey(irecipe.id())) {
++            throw new IllegalStateException("Duplicate recipe ignored with ID " + irecipe.id());
++        } else {
++            map.putAndMoveToFirst(irecipe.id(), irecipe);
++
++            //Ketting start
++            //copy recipes to new map that is mutable
++            Map<RecipeType<?>, Map<ResourceLocation, RecipeHolder<?>>> newRecipes = Maps.newHashMap(this.recipes);
++            newRecipes.put(irecipe.value().getType(), ImmutableMap.copyOf(map));
++
++            //make the new map immutable
++            this.recipes = ImmutableMap.copyOf(newRecipes);
++            //Ketting end
++
++            byName.put(irecipe.id(), irecipe);
++        }
++    }
++    // CraftBukkit end
++
+     public boolean hadErrorsLoading() {
+         return this.hasErrors;
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> Optional<RecipeHolder<T>> getRecipeFor(RecipeType<T> p_44016_, C p_44017_, Level p_44018_) {
+-        return this.byType(p_44016_).values().stream().filter(p_300819_ -> p_300819_.value().matches(p_44017_, p_44018_)).findFirst();
++        // CraftBukkit start
++        Optional<RecipeHolder<T>> recipe = this.byType(p_44016_).values().stream().filter((p_296918_) -> {
++            return p_296918_.value().matches(p_44017_, p_44018_);
++        }).findFirst();
++        p_44017_.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
++        return recipe;
++        // CraftBukkit end
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> Optional<Pair<ResourceLocation, RecipeHolder<T>>> getRecipeFor(
+@@ -106,7 +_,7 @@
+     }
+ 
+     private <C extends Container, T extends Recipe<C>> Map<ResourceLocation, RecipeHolder<T>> byType(RecipeType<T> p_44055_) {
+-        return (Map<ResourceLocation, RecipeHolder<T>>)(Map<ResourceLocation, ?>)this.recipes.getOrDefault(p_44055_, Collections.emptyMap());
++        return (Map) this.recipes.getOrDefault(p_44055_, new java.util.HashMap<>()); // CraftBukkit
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> p_44070_, C p_44071_, Level p_44072_) {
 @@ -136,9 +_,15 @@
          return this.recipes.values().stream().flatMap(p_220258_ -> p_220258_.keySet().stream());
      }
@@ -45,3 +110,34 @@
      }
  
      public void replaceRecipes(Iterable<RecipeHolder<?>> p_44025_) {
+@@ -155,8 +_,28 @@
+             }
+         });
+         this.recipes = ImmutableMap.copyOf(map);
+-        this.byName = builder.build();
+-    }
++        this.byName = Maps.newHashMap(builder.build()); // CraftBukkit
++    }
++
++    // CraftBukkit start
++    public boolean removeRecipe(ResourceLocation resourceLocation) {
++        for (Map<ResourceLocation, RecipeHolder<?>> recipes : recipes.values()) {
++            recipes.remove(resourceLocation);
++        }
++
++        return byName.remove(resourceLocation) != null;
++    }
++
++    public void clearRecipes() {
++        this.recipes = Maps.newHashMap();
++
++        for (RecipeType<?> recipeType : net.minecraft.core.registries.BuiltInRegistries.RECIPE_TYPE) {
++            this.recipes.put(recipeType, new java.util.HashMap<>());
++        }
++
++        this.byName = Maps.newHashMap();
++    }
++    // CraftBukkit end
+ 
+     public static <C extends Container, T extends Recipe<C>> RecipeManager.CachedCheck<C, T> createCheck(final RecipeType<T> p_220268_) {
+         return new RecipeManager.CachedCheck<C, T>() {

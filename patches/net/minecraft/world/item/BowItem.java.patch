@@ -26,6 +26,38 @@
                          abstractarrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, f * 3.0F, 1.0F);
                          if (f == 1.0F) {
                              abstractarrow.setCritArrow(true);
+@@ -58,12 +_,30 @@
+                             abstractarrow.setSecondsOnFire(100);
+                         }
+ 
++                        // CraftBukkit start
++                        org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityShootBowEvent(player, p_40667_, itemstack, abstractarrow, player.getUsedItemHand(), f, !flag1);
++                        if (event.isCancelled()) {
++                            event.getProjectile().remove();
++                            return;
++                        }
++                        flag1 = !event.shouldConsumeItem();
++                        // CraftBukkit end
++
+                         p_40667_.hurtAndBreak(1, player, p_311711_ -> p_311711_.broadcastBreakEvent(player.getUsedItemHand()));
+                         if (flag1 || player.getAbilities().instabuild && (itemstack.is(Items.SPECTRAL_ARROW) || itemstack.is(Items.TIPPED_ARROW))) {
+                             abstractarrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+                         }
+ 
+-                        p_40668_.addFreshEntity(abstractarrow);
++                        // CraftBukkit start
++                        if (event.getProjectile() == abstractarrow.getBukkitEntity()) {
++                            if (!p_40668_.addFreshEntity(abstractarrow)) {
++                                if (player instanceof net.minecraft.server.level.ServerPlayer) {
++                                    ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().updateInventory();
++                                }
++                                return;
++                            }
++                        }
++                        // CraftBukkit end
+                     }
+ 
+                     p_40668_.playSound(
 @@ -113,6 +_,10 @@
      public InteractionResultHolder<ItemStack> use(Level p_40672_, Player p_40673_, InteractionHand p_40674_) {
          ItemStack itemstack = p_40673_.getItemInHand(p_40674_);
