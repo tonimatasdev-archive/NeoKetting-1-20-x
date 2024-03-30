@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -56,14 +_,14 @@
+ 
+     @Override
+     public void randomTick(BlockState p_221799_, ServerLevel p_221800_, BlockPos p_221801_, RandomSource p_221802_) {
+-        if (p_221800_.dimensionType().natural()
+-            && p_221800_.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
+-            && p_221802_.nextInt(2000) < p_221800_.getDifficulty().getId()) {
++        if (p_221800_.spigotConfig.enableZombiePigmenPortalSpawns && p_221800_.dimensionType().natural() && p_221800_.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && p_221802_.nextInt(2000) < p_221800_.getDifficulty().getId()) { // Spigot
+             while(p_221800_.getBlockState(p_221801_).is(this)) {
+                 p_221801_ = p_221801_.below();
+             }
+ 
+             if (p_221800_.getBlockState(p_221801_).isValidSpawn(p_221800_, p_221801_, EntityType.ZOMBIFIED_PIGLIN)) {
++                // CraftBukkit - set spawn reason to NETHER_PORTAL
++                EntityType.ZOMBIFIED_PIGLIN.ketting$spawn$spawnReason.set(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL); //Ketting
+                 Entity entity = EntityType.ZOMBIFIED_PIGLIN.spawn(p_221800_, p_221801_.above(), MobSpawnType.STRUCTURE);
+                 if (entity != null) {
+                     entity.setPortalCooldown();
+@@ -85,6 +_,10 @@
+     @Override
+     public void entityInside(BlockState p_54915_, Level p_54916_, BlockPos p_54917_, Entity p_54918_) {
+         if (p_54918_.canChangeDimensions()) {
++            // CraftBukkit start - Entity in portal
++            org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(p_54918_.getBukkitEntity(), new org.bukkit.Location(p_54916_.getWorld(), p_54917_.getX(), p_54917_.getY(), p_54917_.getZ()));
++            p_54916_.getCraftServer().getPluginManager().callEvent(event);
++            // CraftBukkit end
+             p_54918_.handleInsidePortal(p_54917_);
+         }
+     }

@@ -39,12 +39,13 @@
          } else if (blockstate.canOcclude()) {
              Block.BlockStatePairKey block$blockstatepairkey = new Block.BlockStatePairKey(p_152445_, blockstate, p_152448_);
              Object2ByteLinkedOpenHashMap<Block.BlockStatePairKey> object2bytelinkedopenhashmap = OCCLUSION_CACHE.get();
-@@ -305,9 +_,12 @@
+@@ -305,9 +_,13 @@
      public static void dropResources(
          BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_
      ) {
 +        dropResources(p_49882_, p_49883_, p_49884_, p_49885_, p_49886_, p_49887_, true);
 +    }
++    
 +    public static void dropResources(BlockState p_49882_, Level p_49883_, BlockPos p_49884_, @Nullable BlockEntity p_49885_, @Nullable Entity p_49886_, ItemStack p_49887_, boolean dropXp) {
          if (p_49883_ instanceof ServerLevel) {
              getDrops(p_49882_, (ServerLevel)p_49883_, p_49884_, p_49885_, p_49886_, p_49887_).forEach(p_49944_ -> popResource(p_49883_, p_49884_, p_49944_));
@@ -53,7 +54,7 @@
          }
      }
  
-@@ -335,7 +_,7 @@
+@@ -335,19 +_,26 @@
      }
  
      private static void popResource(Level p_152441_, Supplier<ItemEntity> p_152442_, ItemStack p_152443_) {
@@ -61,8 +62,15 @@
 +        if (!p_152441_.isClientSide && !p_152443_.isEmpty() && p_152441_.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS) && !p_152441_.restoringBlockSnapshots) {
              ItemEntity itementity = p_152442_.get();
              itementity.setDefaultPickUpDelay();
-             p_152441_.addFreshEntity(itementity);
-@@ -343,11 +_,12 @@
+-            p_152441_.addFreshEntity(itementity);
++            // CraftBukkit start
++            if (p_152441_.captureDrops != null) {
++                p_152441_.captureDrops.add(itementity);
++            } else {
++                p_152441_.addFreshEntity(itementity);
++            }
++            // CraftBukkit end
+         }
      }
  
      public void popExperience(ServerLevel p_49806_, BlockPos p_49807_, int p_49808_) {
@@ -76,11 +84,13 @@
      public float getExplosionResistance() {
          return this.explosionResistance;
      }
-@@ -366,7 +_,8 @@
+@@ -365,8 +_,9 @@
+ 
      public void playerDestroy(Level p_49827_, Player p_49828_, BlockPos p_49829_, BlockState p_49830_, @Nullable BlockEntity p_49831_, ItemStack p_49832_) {
          p_49828_.awardStat(Stats.BLOCK_MINED.get(this));
-         p_49828_.causeFoodExhaustion(0.005F);
+-        p_49828_.causeFoodExhaustion(0.005F);
 -        dropResources(p_49830_, p_49827_, p_49829_, p_49831_, p_49828_, p_49832_);
++        p_49828_.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
 +        //Forge: Don't drop xp as part of the resources as it is handled by the patches in ServerPlayerGameMode#destroyBlock
 +        dropResources(p_49830_, p_49827_, p_49829_, p_49831_, p_49828_, p_49832_, false);
      }
@@ -113,7 +123,7 @@
      public SoundType getSoundType(BlockState p_49963_) {
          return this.soundType;
      }
-@@ -498,6 +_,75 @@
+@@ -498,19 +_,110 @@
          return this.stateDefinition.getPossibleStates().stream().collect(ImmutableMap.toImmutableMap(Function.identity(), p_152459_));
      }
  
@@ -189,3 +199,40 @@
      @Deprecated
      public Holder.Reference<Block> builtInRegistryHolder() {
          return this.builtInRegistryHolder;
+     }
+ 
++    public int ketting$tryDropExperience$result = 0; //Ketting
++    // CraftBukkit start
+     protected void tryDropExperience(ServerLevel p_220823_, BlockPos p_220824_, ItemStack p_220825_, IntProvider p_220826_) {
+         if (EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, p_220825_) == 0) {
+             int i = p_220826_.sample(p_220823_.random);
+             if (i > 0) {
+-                this.popExperience(p_220823_, p_220824_, i);
++                // this.popExperience(p_220823_, p_220824_, i);
++                ketting$tryDropExperience$result = i;
++                return;
+             }
+         }
+-    }
++        ketting$tryDropExperience$result = 0;
++    }
++
++    public int getExpDrop(BlockState blockstate, ServerLevel serverlevel, BlockPos blockpos, ItemStack itemstack, boolean flag) {
++        return 0;
++    }
++    // CraftBukkit end
++
++    // Spigot start
++    public static float range(float min, float value, float max) {
++        if (value < min) {
++            return min;
++        }
++        if (value > max) {
++            return max;
++        }
++        return value;
++    }
++    // Spigot end
+ 
+     public static final class BlockStatePairKey {
+         private final BlockState first;
