@@ -22,7 +22,7 @@
              if (holder1 == null) {
                  return false;
              } else {
-@@ -183,6 +_,57 @@
+@@ -183,6 +_,60 @@
              }
          }
      }
@@ -73,7 +73,10 @@
 +        } else if (worldgentreeabstract == TreeFeatures.CHERRY || worldgentreeabstract == TreeFeatures.CHERRY_BEES_005) {
 +            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.CHERRY;
 +        } else {
-+            throw new IllegalArgumentException("Unknown tree generator " + worldgentreeabstract);
++            //Ketting start
++            // throw new IllegalArgumentException("Unknown tree generator " + worldgentreeabstract);
++            net.minecraft.world.level.block.SaplingBlock.treeType = org.bukkit.TreeType.CUSTOM;
++            //Ketting end
 +        }
 +    }
 +    // CraftBukkit end
