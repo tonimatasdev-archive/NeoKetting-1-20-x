@@ -1,0 +1,22 @@
+--- a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+@@ -138,7 +_,10 @@
+                 double d5 = (double)blockpos.getZ() + 0.5 * d1 + d2;
+                 ItemEntity itementity = new ItemEntity(this.level, d3, d4, d5, this.item.split(this.level.random.nextInt(21) + 10));
+                 itementity.setDeltaMovement(Vec3.ZERO);
+-                this.level.addFreshEntity(itementity);
++                // CraftBukkit start
++                org.bukkit.block.Block bblock = org.bukkit.craftbukkit.v1_20_R3.block.CraftBlock.at(this.level, this.worldPosition);
++                org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.handleBlockDropItemEvent(bblock, bblock.getState(), (ServerPlayer) p_278006_, java.util.Arrays.asList(itementity));
++                // CraftBukkit end
+                 this.item = ItemStack.EMPTY;
+             }
+         }
+@@ -208,6 +_,7 @@
+ 
+     @Override
+     public void load(CompoundTag p_277597_) {
++        super.load(p_277597_); // CraftBukkit - SPIGOT-7393: Load super Bukkit data
+         if (!this.tryLoadLootTable(p_277597_) && p_277597_.contains("item")) {
+             this.item = ItemStack.of(p_277597_.getCompound("item"));
+         }

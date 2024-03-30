@@ -1,0 +1,14 @@
+--- a/net/minecraft/world/level/block/entity/BannerBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+@@ -60,6 +_,11 @@
+ 
+     public void fromItem(ItemStack p_187454_) {
+         this.itemPatterns = getItemPatterns(p_187454_);
++        // CraftBukkit start
++        while (this.itemPatterns.size() > 20) {
++            this.itemPatterns.remove(20);
++        }
++        // CraftBukkit end
+         this.patterns = null;
+         this.name = p_187454_.hasCustomHoverName() ? p_187454_.getHoverName() : null;
+     }

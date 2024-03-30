@@ -1,5 +1,96 @@
 --- a/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+@@ -69,6 +_,37 @@
+         }
+     };
+ 
++    // CraftBukkit start - add fields and methods
++    private int lastTick = net.minecraft.server.MinecraftServer.currentTick;
++    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<org.bukkit.entity.HumanEntity>();
++    private int maxStack = 64;
++
++    public void onOpen(org.bukkit.craftbukkit.v1_20_R3.entity.CraftHumanEntity who) {
++        transaction.add(who);
++    }
++
++    public void onClose(org.bukkit.craftbukkit.v1_20_R3.entity.CraftHumanEntity who) {
++        transaction.remove(who);
++    }
++
++    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
++        return transaction;
++    }
++
++    public java.util.List<ItemStack> getContents() {
++        return this.items;
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return maxStack;
++    }
++
++    public void setMaxStackSize(int size) {
++        maxStack = size;
++    }
++    // CraftBukkit end
++
+     public BrewingStandBlockEntity(BlockPos p_155283_, BlockState p_155284_) {
+         super(BlockEntityType.BREWING_STAND, p_155283_, p_155284_);
+     }
+@@ -97,19 +_,34 @@
+     public static void serverTick(Level p_155286_, BlockPos p_155287_, BlockState p_155288_, BrewingStandBlockEntity p_155289_) {
+         ItemStack itemstack = p_155289_.items.get(4);
+         if (p_155289_.fuel <= 0 && itemstack.is(Items.BLAZE_POWDER)) {
+-            p_155289_.fuel = 20;
+-            itemstack.shrink(1);
++            // CraftBukkit start
++            org.bukkit.event.inventory.BrewingStandFuelEvent event = new org.bukkit.event.inventory.BrewingStandFuelEvent(org.bukkit.craftbukkit.v1_20_R3.block.CraftBlock.at(p_155286_, p_155287_), org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asCraftMirror(itemstack), 20);
++            p_155286_.getCraftServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return;
++            }
++
++            p_155289_.fuel = event.getFuelPower();
++            if (p_155289_.fuel > 0 && event.isConsuming()) {
++                itemstack.shrink(1);
++            }
++            // CraftBukkit end
+             setChanged(p_155286_, p_155287_, p_155288_);
+         }
+ 
+         boolean flag = isBrewable(p_155289_.items);
+         boolean flag1 = p_155289_.brewTime > 0;
+         ItemStack itemstack1 = p_155289_.items.get(3);
++        // CraftBukkit start - Use wall time instead of ticks for brewing
++        int elapsedTicks = net.minecraft.server.MinecraftServer.currentTick - p_155289_.lastTick;
++        p_155289_.lastTick = net.minecraft.server.MinecraftServer.currentTick;
+         if (flag1) {
+-            --p_155289_.brewTime;
+-            boolean flag2 = p_155289_.brewTime == 0;
++            p_155289_.brewTime -= elapsedTicks;
++            boolean flag2 = p_155289_.brewTime <= 0; // == -> <=
++            // CraftBukkit end
+             if (flag2 && flag) {
+-                doBrew(p_155286_, p_155287_, p_155289_.items);
++                doBrew(p_155286_, p_155287_, p_155289_.items, p_155289_); //CraftBukkit
+                 setChanged(p_155286_, p_155287_, p_155288_);
+             } else if (!flag || !itemstack1.is(p_155289_.ingredient)) {
+                 p_155289_.brewTime = 0;
+@@ -117,7 +_,11 @@
+             }
+         } else if (flag && p_155289_.fuel > 0) {
+             --p_155289_.fuel;
+-            p_155289_.brewTime = 400;
++            // CraftBukkit start
++            org.bukkit.event.block.BrewingStartEvent event = new org.bukkit.event.block.BrewingStartEvent(org.bukkit.craftbukkit.v1_20_R3.block.CraftBlock.at(p_155286_, p_155287_), org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asCraftMirror(itemstack1), 400);
++            p_155286_.getCraftServer().getPluginManager().callEvent(event);
++            p_155289_.brewTime = event.getTotalBrewTime(); // 400 -> event.getTotalBrewTime()
++            // CraftBukkit end
+             p_155289_.ingredient = itemstack1.getItem();
+             setChanged(p_155286_, p_155287_, p_155288_);
+         }
 @@ -152,6 +_,7 @@
  
      private static boolean isBrewable(NonNullList<ItemStack> p_155295_) {
@@ -8,9 +99,20 @@
          if (itemstack.isEmpty()) {
              return false;
          } else if (!PotionBrewing.isIngredient(itemstack)) {
-@@ -169,21 +_,21 @@
+@@ -168,27 +_,64 @@
+         }
      }
  
++    private static BrewingStandBlockEntity tileentitybrewingstand = null;
++
++    private static void prepareBrew(BrewingStandBlockEntity tileentitybrewingstand){
++        BrewingStandBlockEntity.tileentitybrewingstand = tileentitybrewingstand;
++    }
++
++    private static void doBrew(Level world, BlockPos blockposition, NonNullList<ItemStack> nonnulllist, BrewingStandBlockEntity tileentitybrewingstand) {
++        prepareBrew(tileentitybrewingstand);
++        doBrew(world, blockposition, nonnulllist);
++    }
      private static void doBrew(Level p_155291_, BlockPos p_155292_, NonNullList<ItemStack> p_155293_) {
 +        if (net.neoforged.neoforge.event.EventHooks.onPotionAttemptBrew(p_155293_)) return;
          ItemStack itemstack = p_155293_.get(3);
@@ -22,6 +124,7 @@
 -        itemstack.shrink(1);
 -        if (itemstack.getItem().hasCraftingRemainingItem()) {
 -            ItemStack itemstack1 = new ItemStack(itemstack.getItem().getCraftingRemainingItem());
++        if (!craftBukkitBrewEvent(itemstack, p_155291_, p_155292_, p_155293_)) return;
 +        net.neoforged.neoforge.common.brewing.BrewingRecipeRegistry.brewPotions(p_155293_, itemstack, SLOTS_FOR_SIDES);
 +        net.neoforged.neoforge.event.EventHooks.onPotionBrewed(p_155293_);
 +        if (itemstack.hasCraftingRemainingItem()) {
@@ -37,6 +140,37 @@
  
          p_155293_.set(3, itemstack);
          p_155291_.levelEvent(1035, p_155292_, 0);
+     }
+ 
++    private static boolean craftBukkitBrewEvent(ItemStack itemstack, Level world, BlockPos blockposition, NonNullList<ItemStack> nonnulllist){
++        org.bukkit.inventory.InventoryHolder owner = tileentitybrewingstand != null ? tileentitybrewingstand.getOwner() : null;
++        java.util.List<org.bukkit.inventory.ItemStack> brewResults = new java.util.ArrayList<>(3);
++        for (int i = 0; i < 3; ++i) {
++            brewResults.add(i, org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asCraftMirror(PotionBrewing.mix(itemstack, (ItemStack) nonnulllist.get(i))));
++        }
++        if (owner != null) {
++            org.bukkit.event.inventory.BrewEvent event = new org.bukkit.event.inventory.BrewEvent(org.bukkit.craftbukkit.v1_20_R3.block.CraftBlock.at(world, blockposition), (org.bukkit.inventory.BrewerInventory) owner.getInventory(), brewResults, tileentitybrewingstand.fuel);
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                return false;
++            }
++        }
++        // CraftBukkit end
++        for (int i = 0; i < 3; ++i) {
++            // CraftBukkit start - validate index in case it is cleared by plugins
++            if (i < brewResults.size()) {
++                nonnulllist.set(i, org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asNMSCopy(brewResults.get(i)));
++            } else {
++                nonnulllist.set(i, ItemStack.EMPTY);
++            }
++            // CraftBukkit end
++        }
++        return true;
++    }
++
+     @Override
+     public void load(CompoundTag p_155297_) {
+         super.load(p_155297_);
 @@ -236,11 +_,11 @@
      @Override
      public boolean canPlaceItem(int p_59017_, ItemStack p_59018_) {
