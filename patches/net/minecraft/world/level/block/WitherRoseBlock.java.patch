@@ -1,0 +1,10 @@
+--- a/net/minecraft/world/level/block/WitherRoseBlock.java
++++ b/net/minecraft/world/level/block/WitherRoseBlock.java
+@@ -73,6 +_,7 @@
+     public void entityInside(BlockState p_58238_, Level p_58239_, BlockPos p_58240_, Entity p_58241_) {
+         if (!p_58239_.isClientSide && p_58239_.getDifficulty() != Difficulty.PEACEFUL) {
+             if (p_58241_ instanceof LivingEntity livingentity && !livingentity.isInvulnerableTo(p_58239_.damageSources().wither())) {
++                livingentity.prepareAddEffect(org.bukkit.event.entity.EntityPotionEffectEvent.Cause.WITHER_ROSE); //Ketting
+                 livingentity.addEffect(new MobEffectInstance(MobEffects.WITHER, 40));
+             }
+         }

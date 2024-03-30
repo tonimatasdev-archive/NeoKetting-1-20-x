@@ -7,9 +7,37 @@
 -        if (i < 3 && p_222566_.nextInt(5) == 0 && p_222564_.getRawBrightness(p_222565_.above(), 0) >= 9) {
 +        if (i < 3 && p_222564_.getRawBrightness(p_222565_.above(), 0) >= 9 && net.neoforged.neoforge.common.CommonHooks.onCropsGrowPre(p_222564_, p_222565_, p_222563_, p_222566_.nextInt(5) == 0)) {
              BlockState blockstate = p_222563_.setValue(AGE, Integer.valueOf(i + 1));
-             p_222564_.setBlock(p_222565_, blockstate, 2);
+-            p_222564_.setBlock(p_222565_, blockstate, 2);
++            if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.handleBlockGrowEvent(p_222564_, p_222565_, blockstate, 2)) return; // CraftBukkit
              p_222564_.gameEvent(GameEvent.BLOCK_CHANGE, p_222565_, GameEvent.Context.of(blockstate));
 +            net.neoforged.neoforge.common.CommonHooks.onCropsGrowPost(p_222564_, p_222565_, p_222563_);
          }
      }
  
+@@ -83,7 +_,9 @@
+                 double d0 = Math.abs(p_57273_.getX() - p_57273_.xOld);
+                 double d1 = Math.abs(p_57273_.getZ() - p_57273_.zOld);
+                 if (d0 >= 0.003F || d1 >= 0.003F) {
++                    org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.blockDamage = org.bukkit.craftbukkit.v1_20_R3.block.CraftBlock.at(p_57271_, p_57272_); // CraftBukkit
+                     p_57273_.hurt(p_57271_.damageSources().sweetBerryBush(), 1.0F);
++                    org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.blockDamage = null; // CraftBukkit
+                 }
+             }
+         }
+@@ -97,7 +_,15 @@
+             return InteractionResult.PASS;
+         } else if (i > 1) {
+             int j = 1 + p_57276_.random.nextInt(2);
+-            popResource(p_57276_, p_57277_, new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0)));
++            // CraftBukkit start
++            org.bukkit.event.player.PlayerHarvestBlockEvent event = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callPlayerHarvestBlockEvent(p_57276_, p_57277_, p_57278_, p_57279_, java.util.Collections.singletonList(new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0))));
++            if (event.isCancelled()) {
++                return InteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
++            }
++            for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
++                popResource(p_57276_, p_57277_, org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack.asNMSCopy(itemStack));
++            }
++            // CraftBukkit end
+             p_57276_.playSound(null, p_57277_, SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, 0.8F + p_57276_.random.nextFloat() * 0.4F);
+             BlockState blockstate = p_57275_.setValue(AGE, Integer.valueOf(1));
+             p_57276_.setBlock(p_57277_, blockstate, 2);

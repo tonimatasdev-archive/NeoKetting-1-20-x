@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/StemBlock.java
 +++ b/net/minecraft/world/level/block/StemBlock.java
-@@ -79,18 +_,18 @@
+@@ -79,27 +_,33 @@
  
      @Override
      public void randomTick(BlockState p_222538_, ServerLevel p_222539_, BlockPos p_222540_, RandomSource p_222541_) {
@@ -13,7 +13,7 @@
                  if (i < 7) {
 -                    p_222538_ = p_222538_.setValue(AGE, Integer.valueOf(i + 1));
 -                    p_222539_.setBlock(p_222540_, p_222538_, 2);
-+                    p_222539_.setBlock(p_222540_, p_222538_.setValue(AGE, Integer.valueOf(i + 1)), 2);
++                    org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.handleBlockGrowEvent(p_222539_, p_222540_, p_222538_, 2); // CraftBukkit
                  } else {
                      Direction direction = Direction.Plane.HORIZONTAL.getRandomDirection(p_222541_);
                      BlockPos blockpos = p_222540_.relative(direction);
@@ -23,7 +23,14 @@
                          Registry<Block> registry = p_222539_.registryAccess().registryOrThrow(Registries.BLOCK);
                          Optional<Block> optional = registry.getOptional(this.fruit);
                          Optional<Block> optional1 = registry.getOptional(this.attachedStem);
-@@ -100,6 +_,7 @@
+                         if (optional.isPresent() && optional1.isPresent()) {
++                            // CraftBukkit start
++                            if (!org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.handleBlockGrowEvent(p_222539_, blockpos, optional.get().defaultBlockState())) {
++                                return;
++                            }
++                            // CraftBukkit end
+                             p_222539_.setBlockAndUpdate(blockpos, optional.get().defaultBlockState());
+                             p_222539_.setBlockAndUpdate(p_222540_, optional1.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction));
                          }
                      }
                  }
@@ -31,6 +38,15 @@
              }
          }
      }
+@@ -123,7 +_,7 @@
+     public void performBonemeal(ServerLevel p_222528_, RandomSource p_222529_, BlockPos p_222530_, BlockState p_222531_) {
+         int i = Math.min(7, p_222531_.getValue(AGE) + Mth.nextInt(p_222528_.random, 2, 5));
+         BlockState blockstate = p_222531_.setValue(AGE, Integer.valueOf(i));
+-        p_222528_.setBlock(p_222530_, blockstate, 2);
++        org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.handleBlockGrowEvent(p_222528_, p_222530_, blockstate, 2); // CraftBukkit
+         if (i == 7) {
+             blockstate.randomTick(p_222528_, p_222530_, p_222528_.random);
+         }
 @@ -132,5 +_,11 @@
      @Override
      protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> p_57040_) {
