@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+@@ -156,7 +_,7 @@
+     public static void teleportEntity(Level p_155829_, BlockPos p_155830_, BlockState p_155831_, Entity p_155832_, TheEndGatewayBlockEntity p_155833_) {
+         if (p_155829_ instanceof ServerLevel serverlevel && !p_155833_.isCoolingDown()) {
+             p_155833_.teleportCooldown = 100;
+-            if (p_155833_.exitPortal == null && p_155829_.dimension() == Level.END) {
++            if (p_155833_.exitPortal == null && p_155829_.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.END) { // CraftBukkit - work in alternate worlds
+                 BlockPos blockpos = findOrCreateValidTeleportPos(serverlevel, p_155830_);
+                 blockpos = blockpos.above(10);
+                 LOGGER.debug("Creating portal at {}", blockpos);
+@@ -183,8 +_,34 @@
+                     entity = p_155832_.getRootVehicle();
+                 }
+ 
++                // CraftBukkit start - Fire PlayerTeleportEvent
++                if (entity instanceof ServerPlayer) {
++                    org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer player = (org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer) entity.getBukkitEntity();
++                    org.bukkit.Location location = org.bukkit.craftbukkit.v1_20_R3.util.CraftLocation.toBukkit(blockpos1, p_155829_.getWorld()).add(0.5D, 0.5D, 0.5D);
++                    location.setPitch(player.getLocation().getPitch());
++                    location.setYaw(player.getLocation().getYaw());
++
++                    org.bukkit.event.player.PlayerTeleportEvent teleEvent = new org.bukkit.event.player.PlayerTeleportEvent(player, player.getLocation(), location, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.END_GATEWAY);
++                    org.bukkit.Bukkit.getPluginManager().callEvent(teleEvent);
++                    if (teleEvent.isCancelled()) {
++                        return;
++                    }
++
++                    entity.setPortalCooldown();
++                    ((ServerPlayer) entity).connection.teleport(teleEvent.getTo());
++                    triggerCooldown(p_155829_, p_155830_, p_155831_, p_155833_); // CraftBukkit - call at end of method
++                    return;
++
++                }
++
++                org.bukkit.event.entity.EntityTeleportEvent teleEvent = org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callEntityTeleportEvent(entity, blockpos1.getX() + 0.5, blockpos1.getY() + 0.5, blockpos1.getZ() + 0.5);
++                if (teleEvent.isCancelled()) {
++                    return;
++                }
++
+                 entity.setPortalCooldown();
+-                entity.teleportToWithTicket((double)blockpos1.getX() + 0.5, (double)blockpos1.getY(), (double)blockpos1.getZ() + 0.5);
++                entity.teleportToWithTicket(teleEvent.getTo().getX(), teleEvent.getTo().getY(), teleEvent.getTo().getZ());
++                // CraftBukkit end
+             }
+ 
+             triggerCooldown(p_155829_, p_155830_, p_155831_, p_155833_);

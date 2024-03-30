@@ -1,11 +1,16 @@
 --- a/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -15,7 +_,7 @@
+@@ -15,7 +_,12 @@
  import net.minecraft.world.level.block.state.BlockState;
  import org.slf4j.Logger;
  
 -public abstract class BlockEntity {
 +public abstract class BlockEntity extends net.neoforged.neoforge.attachment.AttachmentHolder implements net.neoforged.neoforge.common.extensions.IBlockEntityExtension {
++    public org.spigotmc.CustomTimingsHandler tickTimer = org.bukkit.craftbukkit.v1_20_R3.SpigotTimings.getTileEntityTimings(this); // Spigot
++    // CraftBukkit start - data containers
++    private static final org.bukkit.craftbukkit.v1_20_R3.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.v1_20_R3.persistence.CraftPersistentDataTypeRegistry();
++    public org.bukkit.craftbukkit.v1_20_R3.persistence.CraftPersistentDataContainer persistentDataContainer;
++    // CraftBukkit end
      private static final Logger LOGGER = LogUtils.getLogger();
      private final BlockEntityType<?> type;
      @Nullable
@@ -17,10 +22,18 @@
  
      public BlockEntity(BlockEntityType<?> p_155228_, BlockPos p_155229_, BlockState p_155230_) {
          this.type = p_155228_;
-@@ -48,9 +_,14 @@
+@@ -48,9 +_,22 @@
      }
  
      public void load(CompoundTag p_155245_) {
++        // CraftBukkit start - read container
++        this.persistentDataContainer = new org.bukkit.craftbukkit.v1_20_R3.persistence.CraftPersistentDataContainer(DATA_TYPE_REGISTRY);
++
++        net.minecraft.nbt.Tag persistentDataTag = p_155245_.get("PublicBukkitValues");
++        if (persistentDataTag instanceof CompoundTag) {
++            this.persistentDataContainer.putAll((CompoundTag) persistentDataTag);
++        }
++        // CraftBukkit end
 +        if (p_155245_.contains("NeoForgeData", net.minecraft.nbt.Tag.TAG_COMPOUND)) this.customPersistentData = p_155245_.getCompound("NeoForgeData");
 +        if (p_155245_.contains(ATTACHMENTS_NBT_KEY, net.minecraft.nbt.Tag.TAG_COMPOUND)) deserializeAttachments(p_155245_.getCompound(ATTACHMENTS_NBT_KEY));
      }
@@ -32,6 +45,18 @@
      }
  
      public final CompoundTag saveWithFullMetadata() {
+@@ -68,6 +_,11 @@
+     public final CompoundTag saveWithoutMetadata() {
+         CompoundTag compoundtag = new CompoundTag();
+         this.saveAdditional(compoundtag);
++        // CraftBukkit start - store container
++        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
++            compoundtag.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
++        }
++        // CraftBukkit end
+         return compoundtag;
+     }
+ 
 @@ -161,10 +_,14 @@
  
      public void setRemoved() {
@@ -47,12 +72,10 @@
      }
  
      public boolean triggerEvent(int p_58889_, int p_58890_) {
-@@ -185,6 +_,27 @@
- 
-     public BlockEntityType<?> getType() {
+@@ -187,8 +_,38 @@
          return this.type;
-+    }
-+
+     }
+ 
 +    @Override
 +    public CompoundTag getPersistentData() {
 +        if (this.customPersistentData == null)
@@ -72,6 +95,19 @@
 +    public final <T> T removeData(net.neoforged.neoforge.attachment.AttachmentType<T> type) {
 +        setChanged();
 +        return super.removeData(type);
-     }
- 
++    }
++
      @Deprecated
+     public void setBlockState(BlockState p_155251_) {
+         this.blockState = p_155251_;
+     }
++
++    // CraftBukkit start - add method
++    public org.bukkit.inventory.InventoryHolder getOwner() {
++        if (level == null) return null;
++        org.bukkit.block.BlockState state = level.getWorld().getBlockAt(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ()).getState();
++        if (state instanceof org.bukkit.inventory.InventoryHolder) return (org.bukkit.inventory.InventoryHolder) state;
++        return null;
++    }
++    // CraftBukkit end
+ }
