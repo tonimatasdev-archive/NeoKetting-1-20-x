@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/item/EggItem.java
 +++ b/net/minecraft/world/item/EggItem.java
-@@ -17,22 +_,21 @@
+@@ -17,22 +_,22 @@
      @Override
      public InteractionResultHolder<ItemStack> use(Level p_41128_, Player p_41129_, InteractionHand p_41130_) {
          ItemStack itemstack = p_41129_.getItemInHand(p_41130_);
@@ -25,8 +25,9 @@
 +                if (p_41129_ instanceof net.minecraft.server.level.ServerPlayer) {
 +                    ((net.minecraft.server.level.ServerPlayer) p_41129_).getBukkitEntity().updateInventory();
 +                }
-+                return InteractionResultHolder.fail(itemsta            }
-+            // CraftBukkit endck);
++                return InteractionResultHolder.fail(itemstack);
++            }
++            // CraftBukkit end
 +
          }
 +        p_41128_.playSound((Player)null, p_41129_.getX(), p_41129_.getY(), p_41129_.getZ(), SoundEvents.EGG_THROW, SoundSource.PLAYERS, 0.5F, 0.4F / (p_41128_.getRandom().nextFloat() * 0.4F + 0.8F));

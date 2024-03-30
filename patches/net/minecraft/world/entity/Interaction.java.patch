@@ -23,7 +23,7 @@
      }
  
 -    public static record PlayerAction(UUID player, long timestamp) {
-+    static record PlayerAction(UUID player, long timestamp) {
++    public static record PlayerAction(UUID player, long timestamp) { // Ketting - I don't know why accesstransformers don't work
          public static final Codec<Interaction.PlayerAction> CODEC = RecordCodecBuilder.create(
              p_273237_ -> p_273237_.group(
                          UUIDUtil.CODEC.fieldOf("player").forGetter(Interaction.PlayerAction::player),

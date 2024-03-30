@@ -8,7 +8,7 @@
          Builder<ResourceLocation, AdvancementHolder> builder = ImmutableMap.builder();
          p_136034_.forEach((p_311532_, p_311533_) -> {
 +            // Spigot start
-+            if (org.spigotmc.SpigotConfig.disabledAdvancements != null && (org.spigotmc.SpigotConfig.disabledAdvancements.contains("*") || org.spigotmc.SpigotConfig.disabledAdvancements.contains(p_308595_.toString()) || org.spigotmc.SpigotConfig.disabledAdvancements.contains(p_308595_.getNamespace()))) {
++            if (org.spigotmc.SpigotConfig.disabledAdvancements != null && (org.spigotmc.SpigotConfig.disabledAdvancements.contains("*") || org.spigotmc.SpigotConfig.disabledAdvancements.contains(p_311533_.toString()) || org.spigotmc.SpigotConfig.disabledAdvancements.contains(p_311532_.getNamespace()))) {
 +                return;
 +            }
 +            // Spigot end

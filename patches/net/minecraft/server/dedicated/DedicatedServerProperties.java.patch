@@ -51,7 +51,7 @@
      }
  
 -    public static record WorldDimensionData(JsonObject generatorSettings, String levelType) {
-+    static record WorldDimensionData(JsonObject generatorSettings, String levelType) {
++    public static record WorldDimensionData(JsonObject generatorSettings, String levelType) { // Ketting - I don't know why accesstransformers don't work
          private static final Map<String, ResourceKey<WorldPreset>> LEGACY_PRESET_NAMES = Map.of(
              "default", WorldPresets.NORMAL, "largebiomes", WorldPresets.LARGE_BIOMES
          );

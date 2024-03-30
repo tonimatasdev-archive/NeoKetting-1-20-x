@@ -2,7 +2,7 @@
 +++ b/net/minecraft/world/entity/projectile/AbstractArrow.java
 @@ -68,6 +_,18 @@
      private List<Entity> piercedAndKilledEntities;
-     private ItemStack pickupItemStack;
+     public ItemStack pickupItemStack;
  
 +    // Spigot Start
 +    @Override

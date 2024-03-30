@@ -5,7 +5,7 @@
      }
  
 -    public static class Tracer implements CommandSource, TraceCallbacks {
-+    static class Tracer implements CommandSource, TraceCallbacks {
++    public static class Tracer implements CommandSource, TraceCallbacks { // Ketting - I don't know why accesstransformers don't work
          public static final int INDENT_OFFSET = 1;
          private final PrintWriter output;
          private int lastIndent;

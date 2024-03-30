@@ -10,6 +10,6 @@
 +    }
 +    // CraftBukkit end
 +
-     protected ItemStack getItemRaw() {
+     public ItemStack getItemRaw() {
          return this.getEntityData().get(DATA_ITEM_STACK);
      }

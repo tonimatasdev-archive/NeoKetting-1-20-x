@@ -348,7 +348,7 @@
 +                    if (p_123562_.isEmpty()) {
 +                        p_123562_.setItem(Items.BUCKET);
 +                        p_123562_.setCount(1);
-+                    } else if (p_123561_.blockEntity().addItem(new ItemStack(item)) < 0) {
++                    } else if (p_302435_.blockEntity().addItem(new ItemStack(item)) < 0) {
 +                        this.defaultDispenseItemBehavior.dispense(p_302435_, new ItemStack(item));
 +                    }
 +                    return p_123562_;
@@ -454,7 +454,7 @@
 +                } else if (blockstate.isFlammable(level, blockpos, p_302453_.state().getValue(DispenserBlock.FACING).getOpposite())) {
 +                    if (blockstate.getBlock() instanceof TntBlock) {
 +                        // CraftBukkit - TNTPrimeEvent
-+                        if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callTNTPrimeEvent(level, blockpos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, p_123412_.pos())) {
++                        if (org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory.callTNTPrimeEvent(level, blockpos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, p_302453_.pos())) {
 +                            blockstate.onCaughtFire(level, blockpos, p_302453_.state().getValue(DispenserBlock.FACING).getOpposite(), null);
 +                            level.removeBlock(blockpos, false);
 +                        }

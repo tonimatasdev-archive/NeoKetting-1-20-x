@@ -73,7 +73,7 @@
          public boolean isEmpty() {
              return this.levels.isEmpty();
 @@ -434,12 +_,41 @@
-         final LevelStorageSource.LevelDirectory levelDirectory;
+         public final LevelStorageSource.LevelDirectory levelDirectory;
          private final String levelId;
          private final Map<LevelResource, Path> resources = Maps.newHashMap();
 +        // CraftBukkit start

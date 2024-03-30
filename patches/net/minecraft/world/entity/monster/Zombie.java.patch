@@ -3,7 +3,7 @@
 @@ -85,6 +_,7 @@
      private boolean canBreakDoors;
      private int inWaterTime;
-     protected int conversionTime;
+     public int conversionTime;
 +    private int lastTick = net.minecraft.server.MinecraftServer.currentTick; // CraftBukkit - add field
  
      public Zombie(EntityType<? extends Zombie> p_34271_, Level p_34272_) {
@@ -39,7 +39,7 @@
 @@ -249,11 +_,13 @@
      }
  
-     private void startUnderWaterConversion(int p_34279_) {
+     public void startUnderWaterConversion(int p_34279_) {
 +        this.lastTick = net.minecraft.server.MinecraftServer.currentTick; // CraftBukkit
          this.conversionTime = p_34279_;
          this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, true);
