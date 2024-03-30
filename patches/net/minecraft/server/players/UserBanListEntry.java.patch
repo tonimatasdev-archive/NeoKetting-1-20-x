@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/players/UserBanListEntry.java
 +++ b/net/minecraft/server/players/UserBanListEntry.java
-@@ -39,19 +_,31 @@
+@@ -39,19 +_,29 @@
  
      @Nullable
      private static GameProfile createGameProfile(JsonObject p_11446_) {
@@ -32,7 +32,5 @@
              return null;
          }
 +        // Spigot End
-+    }
-+}
      }
  }

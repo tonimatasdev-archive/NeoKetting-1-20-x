@@ -17,7 +17,7 @@
                      return;
                  }
  
-@@ -507,10 +_,20 @@
+@@ -507,9 +_,19 @@
  
              LOGGER.debug("Found all crystals, respawning dragon.");
              this.respawnDragon(list1);
@@ -30,15 +30,13 @@
 +        return;
      }
  
--    private void respawnDragon(List<EndCrystal> p_64092_) {
 +    // Ketting don't change the returntype
 +    @org.jetbrains.annotations.ApiStatus.Internal
 +    public boolean ketting$respawnDragon$returnValue = false;
 +    // CraftBukkit - return boolean 
-+    public void respawnDragon(List<EndCrystal> p_64092_) {
+     public void respawnDragon(List<EndCrystal> p_64092_) {
          if (this.dragonKilled && this.respawnStage == null) {
              for(BlockPattern.BlockPatternMatch blockpattern$blockpatternmatch = this.findExitPortal();
-                 blockpattern$blockpatternmatch != null;
 @@ -532,7 +_,16 @@
              this.respawnTime = 0;
              this.spawnExitPortal(false);

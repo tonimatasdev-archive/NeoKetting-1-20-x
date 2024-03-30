@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/inventory/MerchantContainer.java
 +++ b/net/minecraft/world/inventory/MerchantContainer.java
 @@ -18,6 +_,46 @@
-     private int selectionHint;
+     public int selectionHint;
      private int futureXp;
  
 +    // CraftBukkit start - add fields and methods

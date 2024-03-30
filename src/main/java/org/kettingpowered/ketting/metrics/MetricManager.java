@@ -1,9 +1,9 @@
 package org.kettingpowered.ketting.metrics;
 
 import net.minecraft.server.dedicated.DedicatedServer;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.forgespi.language.IModInfo;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforgespi.language.IModInfo;
 import org.bukkit.plugin.Plugin;
 
 import org.bukkit.Bukkit;
@@ -44,7 +44,7 @@ public final class MetricManager {
         }));
         metrics.addCustomChart(new Metrics.DrilldownPie("version", () ->{
             Map<String, Map<String, Integer>> map = new HashMap<>();
-            map.computeIfAbsent(FMLLoader.versionInfo().mcAndForgeVersion(), (c)->new HashMap<>())
+            map.computeIfAbsent(FMLLoader.versionInfo().mcAndNeoFormVersion(), (c)->new HashMap<>())
                     .computeIfAbsent(KettingConstants.KETTING_VERSION, (c)->1);
             return map;
         }));

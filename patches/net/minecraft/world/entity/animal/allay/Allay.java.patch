@@ -68,7 +68,7 @@
      }
  
 +    public @Nullable Allay ketting$duplicateAllay$returnValue = null;
-     private void duplicateAllay() {
+     public void duplicateAllay() {
          Allay allay = EntityType.ALLAY.create(this.level());
          if (allay != null) {
 @@ -525,8 +_,11 @@
@@ -82,4 +82,4 @@
 +        ketting$duplicateAllay$returnValue = allay;
      }
  
-     private void resetDuplicationCooldown() {
+     public void resetDuplicationCooldown() {

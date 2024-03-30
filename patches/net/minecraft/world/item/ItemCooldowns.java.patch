@@ -5,7 +5,7 @@
      }
  
 -    public static class CooldownInstance {
-+    static class CooldownInstance {
++    public static class CooldownInstance { // Ketting - I don't know why accesstransformers don't work
          final int startTime;
-         final int endTime;
+         public final int endTime;
  

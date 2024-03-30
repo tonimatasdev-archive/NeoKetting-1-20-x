@@ -45,7 +45,7 @@
 @@ -191,8 +_,10 @@
      public int tickCount;
      private int remainingFireTicks = -this.getFireImmuneTicks();
-     protected boolean wasTouchingWater;
+     public boolean wasTouchingWater;
 +    @Deprecated // Forge: Use forgeFluidTypeHeight instead
      protected Object2DoubleMap<TagKey<Fluid>> fluidHeight = new Object2DoubleArrayMap<>(2);
      protected boolean wasEyeInWater;
@@ -54,7 +54,7 @@
      public int invulnerableTime;
      protected boolean firstTick = true;
 @@ -241,14 +_,52 @@
-     private boolean hasVisualFire;
+     public boolean hasVisualFire;
      @Nullable
      private BlockState feetBlockState = null;
 +    // CraftBukkit start
@@ -922,7 +922,7 @@
 +        // CraftBukkit - end
      }
  
-     protected boolean getSharedFlag(int p_20292_) {
+     public boolean getSharedFlag(int p_20292_) {
 @@ -2264,7 +_,7 @@
      }
  

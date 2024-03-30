@@ -12,7 +12,7 @@
 @@ -73,6 +_,7 @@
      private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
      private boolean loaded;
-     final Level level;
+     public final Level level;
 +    public final ServerLevel levelCB; //Ketting
      @Nullable
      private Supplier<FullChunkStatus> fullStatus;

@@ -3,7 +3,7 @@
 @@ -71,6 +_,7 @@
      private final List<BeehiveBlockEntity.BeeData> stored = Lists.newArrayList();
      @Nullable
-     private BlockPos savedFlowerPos;
+     public BlockPos savedFlowerPos;
 +    public int maxBees = 3; // CraftBukkit - allow setting max amount of bees a hive can hold
  
      public BeehiveBlockEntity(BlockPos p_155134_, BlockState p_155135_) {

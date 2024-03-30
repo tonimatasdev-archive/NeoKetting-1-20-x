@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/net/minecraft/world/entity/projectile/FishingHook.java
 @@ -64,6 +_,17 @@
-     private FishingHook.FishHookState currentState = FishingHook.FishHookState.FLYING;
+     public FishingHook.FishHookState currentState = FishingHook.FishHookState.FLYING;
      private final int luck;
      private final int lureSpeed;
 +    // CraftBukkit start - Extra variables to enable modification of fishing wait time, values are minecraft defaults

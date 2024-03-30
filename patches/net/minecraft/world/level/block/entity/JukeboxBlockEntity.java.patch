@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java
 @@ -29,6 +_,43 @@
-     private long recordStartedTick;
-     private boolean isPlaying;
+     public long recordStartedTick;
+     public boolean isPlaying;
  
 +    // CraftBukkit start - add fields and methods
 +    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<org.bukkit.entity.HumanEntity>();

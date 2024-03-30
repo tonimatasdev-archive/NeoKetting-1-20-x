@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/item/trading/MerchantOffer.java
 +++ b/net/minecraft/world/item/trading/MerchantOffer.java
 @@ -17,6 +_,23 @@
-     private float priceMultiplier;
-     private int xp = 1;
+     public float priceMultiplier;
+     public int xp = 1;
  
 +    // CraftBukkit start
 +    private org.bukkit.craftbukkit.v1_20_R3.inventory.CraftMerchantRecipe bukkitHandle;

@@ -3,7 +3,7 @@
 @@ -62,6 +_,7 @@
      private boolean clientSideTouchedGround;
      @Nullable
-     protected RandomStrollGoal randomStrollGoal;
+     public RandomStrollGoal randomStrollGoal;
 +    public Guardian.GuardianAttackGoal guardianAttackGoal; // CraftBukkit - add field
  
      public Guardian(EntityType<? extends Guardian> p_32810_, Level p_32811_) {
@@ -21,7 +21,7 @@
      }
  
 -    public static class GuardianAttackGoal extends Goal {
-+    static class GuardianAttackGoal extends Goal {
++    public static class GuardianAttackGoal extends Goal { // Ketting - I don't know why accesstransformers don't work
          private final Guardian guardian;
-         private int attackTime;
+         public int attackTime;
          private final boolean elder;

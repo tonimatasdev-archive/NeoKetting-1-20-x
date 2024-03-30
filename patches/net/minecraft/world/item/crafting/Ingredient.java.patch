@@ -1,7 +1,7 @@
 --- a/net/minecraft/world/item/crafting/Ingredient.java
 +++ b/net/minecraft/world/item/crafting/Ingredient.java
 @@ -34,15 +_,36 @@
-     private ItemStack[] itemStacks;
+     public ItemStack[] itemStacks;
      @Nullable
      private IntList stackingIds;
 -    public static final Codec<Ingredient> CODEC = codec(true);
@@ -19,7 +19,7 @@
 +    public static final Codec<List<Ingredient>> LIST_CODEC = CODEC.listOf();
 +    public static final Codec<List<Ingredient>> LIST_CODEC_NONEMPTY = CODEC_NONEMPTY.listOf();
 +
-+    protected Ingredient(Stream<? extends Ingredient.Value> p_43907_) {
++    public Ingredient(Stream<? extends Ingredient.Value> p_43907_) { // Ketting - I don't know why accesstransformers don't work
 +        this(p_43907_, net.neoforged.neoforge.common.NeoForgeMod.VANILLA_INGREDIENT_TYPE);
      }
  

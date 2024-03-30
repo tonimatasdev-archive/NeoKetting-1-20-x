@@ -1,8 +1,8 @@
 --- a/net/minecraft/world/food/FoodData.java
 +++ b/net/minecraft/world/food/FoodData.java
 @@ -12,21 +_,57 @@
-     private float saturationLevel;
-     private float exhaustionLevel;
+     public float saturationLevel;
+     public float exhaustionLevel;
      private int tickTimer;
 +    // CraftBukkit start
 +    private @org.jetbrains.annotations.Nullable Player entityhuman; //Ketting - nullable
