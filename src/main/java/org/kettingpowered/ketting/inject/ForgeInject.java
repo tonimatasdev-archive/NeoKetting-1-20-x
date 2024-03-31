@@ -3,17 +3,20 @@ package org.kettingpowered.ketting.inject;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBiMap;
 import io.izzel.arclight.api.EnumHelper;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.TrappedChestBlock;
 import net.minecraft.world.level.block.entity.*;
 import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Statistic;
@@ -116,7 +119,7 @@ public class ForgeInject {
         return org.bukkit.entity.Pose.values()[nms.ordinal()];
     }
 
-    public static void doInjectingMagic() {
+    public static void doInjectingMagic(DedicatedServer console) {
         debug("Injecting Forge Materials into Bukkit");
         addForgeMaterials();
         debug("Registering Forge Materials to Bukkit");
@@ -124,7 +127,7 @@ public class ForgeInject {
         debug("Injecting Forge Potions into Bukkit");
         addForgePotions();
         debug("Injecting Forge Biomes into Bukkit");
-        addForgeBiomes();
+        addForgeBiomes(console);
         debug("Injecting Forge Entities into Bukkit");
         addForgeEntities();
         debug("Injecting Forge Spawn Categories into Bukkit");
@@ -150,15 +153,16 @@ public class ForgeInject {
         List<Material> values = new ArrayList<>();
         int origin = ordinal;
         int blocks = 0;
-        for (var entry : ForgeRegistries.BLOCKS.getEntries()) {
-            var location = entry.getKey().location();
+        var registry = BuiltInRegistries.BLOCK;
+        for (Block entry : registry) {
+            var location = registry.getKey(entry);
             if (location.getNamespace().equals(NamespacedKey.MINECRAFT)) {
                 continue;
             }
             // inject block materials into Bukkit for FML
             var enumName = standardize(location);
-            var block = entry.getValue();
-            var item = ForgeRegistries.ITEMS.getValue(location);
+            var block = entry;
+            var item = BuiltInRegistries.ITEM.get(location);
             try {
                 Class<?> match = CraftBlockData.getClosestBlockDataClass(block.getClass());
                 Class<?> blockDataClass = match == null ? null : match.getInterfaces()[0];
@@ -188,14 +192,15 @@ public class ForgeInject {
         debug("Injecting Forge Blocks into Bukkit: DONE");
 
         int items = 0;
-        for (var entry : ForgeRegistries.ITEMS.getEntries()) {
-            var location = entry.getKey().location();
+        var itemRegistry = BuiltInRegistries.ITEM;
+        for (Item entry : itemRegistry) {
+            var location = itemRegistry.getKey(entry);
             if (location.getNamespace().equals(NamespacedKey.MINECRAFT)) {
                 continue;
             }
             // inject item materials into Bukkit for FML
             var enumName = standardize(location);
-            var item = entry.getValue();
+            var item = entry;
             var material = Material.getMaterial(enumName);
             // Material may already be registered by a block
             if (material == null) {
@@ -382,8 +387,9 @@ public class ForgeInject {
     }
 
     private static void addForgePotions() {
-        ForgeRegistries.MOB_EFFECTS.getEntries().forEach(entry -> {
-            var pet = new CraftPotionEffectType(new NamespacedKey(entry.getKey().location().getNamespace(), entry.getKey().location().getPath()), entry.getValue());
+        BuiltInRegistries.MOB_EFFECT.forEach(entry -> {
+            var location = BuiltInRegistries.MOB_EFFECT.getKey(entry);
+            var pet = new CraftPotionEffectType(new NamespacedKey(location.getNamespace(), location.getPath()), entry);
 
             if (pet == null)
                 return;
@@ -399,8 +405,8 @@ public class ForgeInject {
 
         int ordinal = EntityType.values().length;
         List<PotionType> values = new ArrayList<>();
-        for (var entry : ForgeRegistries.POTIONS) {
-            var location = ForgeRegistries.POTIONS.getKey(entry);
+        for (var entry : BuiltInRegistries.POTION) {
+            var location = BuiltInRegistries.POTION.getKey(entry);
             String name = standardize(location);
             try {
                 PotionType.valueOf(name);
@@ -419,11 +425,12 @@ public class ForgeInject {
         debug("Injecting Forge Potion into Bukkit: DONE");
     }
 
-    private static void addForgeBiomes() {
+    private static void addForgeBiomes(DedicatedServer dedicatedServer) {
         int ordinal = EntityType.values().length;
         List<Biome> values = new ArrayList<>();
-        for (var entry : ForgeRegistries.BIOMES.getEntries()) {
-            var location = entry.getKey().location();
+        var registry = dedicatedServer.registryAccess().registryOrThrow(Registries.BIOME);
+        for (var entry : registry) {
+            var location = registry.getKey(entry);
             if (location.getNamespace().equals(NamespacedKey.MINECRAFT)) {
                 continue;
             }
@@ -444,10 +451,10 @@ public class ForgeInject {
     private static void addForgeEntities() {
         int ordinal = EntityType.values().length;
         List<EntityType> values = new ArrayList<>();
-        for (var entry : ForgeRegistries.ENTITY_TYPES.getEntries()) {
-            var location = ForgeRegistries.ENTITY_TYPES.getKey(entry.getValue());
+        for (var entry : BuiltInRegistries.ENTITY_TYPE) {
+            var location = BuiltInRegistries.ENTITY_TYPE.getKey(entry);
             var enumName = standardize(location);
-            ENTITY_TYPES.put(entry.getValue(), enumName);
+            ENTITY_TYPES.put(entry, enumName);
             if (location.getNamespace().equals(NamespacedKey.MINECRAFT)) {
                 continue;
             }
@@ -458,7 +465,7 @@ public class ForgeInject {
                         List.of(location.getPath(), org.bukkit.entity.Entity.class, typeId, false, location.getNamespace()));
                 EntityType.NAME_MAP.put(enumName.toLowerCase(), bukkitType);
                 EntityType.ID_MAP.put((short) typeId, bukkitType);
-                bukkitType.createFactory(entry.getValue());
+                bukkitType.createFactory(entry);
                 ordinal++;
                 values.add(bukkitType);
                 debug("Injecting Forge Entity into Bukkit: " + enumName);
@@ -490,8 +497,8 @@ public class ForgeInject {
     private static void addForgeVillagerProfessions() {
         int ordinal = Villager.Profession.values().length;
         List<Villager.Profession> values = new ArrayList<>();
-        for (var entry : ForgeRegistries.VILLAGER_PROFESSIONS.getEntries()) {
-            var location = entry.getKey().location();
+        for (var entry : BuiltInRegistries.VILLAGER_PROFESSION) {
+            var location = BuiltInRegistries.VILLAGER_PROFESSION.getKey(entry);
             if (!location.getNamespace().equals(NamespacedKey.MINECRAFT)) {
                 var enumName = standardize(location);
                 try {

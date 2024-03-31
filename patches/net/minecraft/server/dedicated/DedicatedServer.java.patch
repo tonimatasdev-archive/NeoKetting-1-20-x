@@ -115,7 +115,7 @@
 +        org.spigotmc.SpigotConfig.registerCommands();
 +        // Spigot end
 +
-+        org.kettingpowered.ketting.inject.ForgeInject.doInjectingMagic(); //Ketting
++        org.kettingpowered.ketting.inject.ForgeInject.doInjectingMagic(this); //Ketting
 +        org.kettingpowered.ketting.command.commands.KettingCommands.registerCommands(this); //Ketting
 +
          this.setPvpAllowed(dedicatedserverproperties.pvp);

@@ -26,10 +26,10 @@
      @Override
      protected float getStandingEyeHeight(Pose p_272721_, EntityDimensions p_273353_) {
          return this.getDimensions(p_272721_).height * 0.6F;
-@@ -272,6 +_,13 @@
-             BlockPos blockpos = this.getHeadBlock();
+@@ -273,6 +_,13 @@
  
              for(ItemStack itemstack : list) {
+                 ItemEntity itementity = new ItemEntity(serverlevel, (double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ(), itemstack);
 +                // CraftBukkit start - handle EntityDropItemEvent
 +                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) itementity.getBukkitEntity());
 +                org.bukkit.Bukkit.getPluginManager().callEvent(event);
@@ -37,9 +37,9 @@
 +                    continue;
 +                }
 +                // CraftBukkit end
-                 ItemEntity itementity = new ItemEntity(serverlevel, (double)blockpos.getX(), (double)blockpos.getY(), (double)blockpos.getZ(), itemstack);
                  itementity.setDefaultPickUpDelay();
                  serverlevel.addFreshEntity(itementity);
+             }
 @@ -295,7 +_,7 @@
                  if (this.tickCount % 10 == 0) {
                      this.level()

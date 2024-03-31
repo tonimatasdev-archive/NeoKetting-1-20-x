@@ -299,7 +299,8 @@
 +    }
 +
      public final boolean addEffect(MobEffectInstance p_21165_) {
-         return this.addEffect(p_21165_, null);
+-        return this.addEffect(p_21165_, null);
++        return this.addEffect(p_21165_, (Entity)null);
      }
  
      public boolean addEffect(MobEffectInstance p_147208_, @Nullable Entity p_147209_) {
@@ -1063,7 +1064,7 @@
 +
 +            // Apply blocking code // PAIL: steal from above
 +            if (event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING) < 0) {
-+                var ev = net.minecraftforge.event.ForgeEventFactory.onShieldBlock(this, damagesource, (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING)); //Ketting
++                var ev = net.neoforged.neoforge.common.CommonHooks.onShieldBlock(this, damagesource, (float) event.getDamage(org.bukkit.event.entity.EntityDamageEvent.DamageModifier.BLOCKING)); //Ketting
 +
 +                if (!ev.isCanceled()) {
 +                    this.level().broadcastEntityEvent(this, (byte) 29); // SPIGOT-4635 - shield damage sound

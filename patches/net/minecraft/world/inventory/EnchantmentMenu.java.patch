@@ -162,7 +162,7 @@
 +                                org.bukkit.enchantments.Enchantment hintedEnchantment = org.bukkit.enchantments.Enchantment.getByKey(org.bukkit.craftbukkit.v1_20_R3.util.CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(net.minecraft.world.item.enchantment.Enchantment.byId(enchantClue[p_39466_]))));
 +                                int hintedEnchantmentLevel = levelClue[p_39466_];
 +                                org.bukkit.event.enchantment.EnchantItemEvent event = new org.bukkit.event.enchantment.EnchantItemEvent((org.bukkit.entity.Player) p_39465_.getBukkitEntity(), this.getBukkitView(), access.getLocation().getBlock(), item, this.costs[p_39466_], enchants, hintedEnchantment, hintedEnchantmentLevel, p_39466_);
-+                                p_39465_.getCraftServer().getPluginManager().callEvent(event);
++                                p_297979_.getCraftServer().getPluginManager().callEvent(event);
 +
 +                                int level = event.getExpLevelCost();
 +                                if (event.isCancelled() || (level > p_39465_.experienceLevel && !p_39465_.getAbilities().instabuild) || event.getEnchantsToAdd().isEmpty()) {

@@ -1,11 +1,17 @@
 package org.kettingpowered.ketting.craftbukkit;
 
+import net.minecraft.network.Connection;
+import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketUtils;
 import net.minecraft.network.protocol.common.*;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.protocol.status.ServerboundPingRequestPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.thread.ReentrantBlockableEventLoop;
+import net.neoforged.neoforge.network.connection.ConnectionType;
+import org.jetbrains.annotations.Nullable;
 
 public class BukkitGamePacketListenerImpl implements net.minecraft.network.protocol.game.ServerGamePacketListener {
     net.minecraft.server.network.ServerGamePacketListenerImpl listener;
@@ -181,4 +187,34 @@ public class BukkitGamePacketListenerImpl implements net.minecraft.network.proto
 
     @Override
     public void handlePingRequest(ServerboundPingRequestPacket p_297526_) {}
+
+    @Override
+    public void send(Packet<?> packet) {
+        
+    }
+
+    @Override
+    public void send(Packet<?> packet, @Nullable PacketSendListener packetSendListener) {
+
+    }
+
+    @Override
+    public void disconnect(Component reason) {
+
+    }
+
+    @Override
+    public Connection getConnection() {
+        return listener.getConnection();
+    }
+
+    @Override
+    public ReentrantBlockableEventLoop<?> getMainThreadEventLoop() {
+        return listener.getMainThreadEventLoop();
+    }
+
+    @Override
+    public ConnectionType getConnectionType() {
+        return listener.getConnectionType();
+    }
 }
