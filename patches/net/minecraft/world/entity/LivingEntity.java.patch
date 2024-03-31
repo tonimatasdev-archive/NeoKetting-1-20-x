@@ -958,7 +958,7 @@
 +            final boolean human = this instanceof ServerPlayer;
 +            float originalDamage = f;
 +            // Cauldron start - apply forge damage hook
-+            f = net.minecraftforge.common.ForgeHooks.onLivingHurt(this, damagesource, f);
++            f = net.neoforged.neoforge.common.CommonHooks.onLivingHurt(this, damagesource, f);
 +            // If the damage is negative return true
 +            if (f < 0) return true;
 +            // Thermos detect null damage

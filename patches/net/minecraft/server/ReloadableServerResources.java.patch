@@ -1,5 +1,14 @@
 --- a/net/minecraft/server/ReloadableServerResources.java
 +++ b/net/minecraft/server/ReloadableServerResources.java
+@@ -31,7 +_,7 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final CompletableFuture<Unit> DATA_RELOAD_INITIAL_TASK = CompletableFuture.completedFuture(Unit.INSTANCE);
+     private final CommandBuildContext.Configurable commandBuildContext;
+-    public final Commands commands;
++    public Commands commands;  // Ketting - Remove final
+     private final RecipeManager recipes = new RecipeManager();
+     private final TagManager tagManager;
+     private final LootDataManager lootData = new LootDataManager();
 @@ -44,6 +_,9 @@
          this.commands = new Commands(p_206858_, this.commandBuildContext);
          this.commandBuildContext.missingTagAccessPolicy(CommandBuildContext.MissingTagAccessPolicy.CREATE_NEW);

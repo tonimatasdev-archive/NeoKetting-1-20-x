@@ -98,11 +98,10 @@
      protected Level(
          WritableLevelData p_270739_,
          ResourceKey<Level> p_270683_,
-@@ -124,6 +_,22 @@
+@@ -124,6 +_,21 @@
          long p_270248_,
          int p_270466_
      ) {
-+        super(Level.class);
 +        bukkitInit();
 +
 +        if (p_270739_ != null)

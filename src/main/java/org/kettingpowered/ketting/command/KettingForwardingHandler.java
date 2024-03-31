@@ -2,10 +2,10 @@ package org.kettingpowered.ketting.command;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.server.permission.handler.IPermissionHandler;
-import net.minecraftforge.server.permission.nodes.PermissionDynamicContext;
-import net.minecraftforge.server.permission.nodes.PermissionNode;
-import net.minecraftforge.server.permission.nodes.PermissionTypes;
+import net.neoforged.neoforge.server.permission.handler.IPermissionHandler;
+import net.neoforged.neoforge.server.permission.nodes.PermissionDynamicContext;
+import net.neoforged.neoforge.server.permission.nodes.PermissionNode;
+import net.neoforged.neoforge.server.permission.nodes.PermissionTypes;
 import org.bukkit.Bukkit;
 import org.kettingpowered.ketting.internal.KettingConstants;
 

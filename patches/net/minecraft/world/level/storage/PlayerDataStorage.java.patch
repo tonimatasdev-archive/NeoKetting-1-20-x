@@ -16,10 +16,10 @@
          } catch (Exception exception) {
              LOGGER.warn("Failed to save player data for {}", p_78434_.getName().getString());
          }
-@@ -45,23 +_,69 @@
-         CompoundTag compoundtag = null;
+@@ -46,22 +_,68 @@
  
          try {
+             File file1 = new File(this.playerDir, p_78436_.getStringUUID() + ".dat");
 +            // Spigot Start
 +            boolean usingWrongFile = false;
 +            if ( !file1.exists() )
@@ -32,8 +32,7 @@
 +                }
 +            }
 +            // Spigot End
-+
-             File file1 = new File(this.playerDir, p_78436_.getStringUUID() + ".dat");
++            
              if (file1.exists() && file1.isFile()) {
                  compoundtag = NbtIo.readCompressed(file1.toPath(), NbtAccounter.unlimitedHeap());
              }

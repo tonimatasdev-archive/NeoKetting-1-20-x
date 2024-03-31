@@ -8,7 +8,7 @@
 +    // private final RconConsoleSource rconConsoleSource; // CraftBukkit - remove field
      @Nullable
      private RconThread rconThread;
-     private final DedicatedServerSettings settings;
+     public DedicatedServerSettings settings;
      @Nullable
      private MinecraftServerGui gui;
 +    public org.kettingpowered.ketting.common.betterservergui.BetterServerGUI betterGui; //Ketting

@@ -27,7 +27,7 @@
 -        .put(VillageSectionsDebugPayload.ID, VillageSectionsDebugPayload::new)
 -        .put(WorldGenAttemptDebugPayload.ID, WorldGenAttemptDebugPayload::new)
 -        .build();
-+    private static final Map<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>> KNOWN_TYPES = ImmutableMap.<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>>builder().build(); // CraftBukkit - no special handling
++    public static final Map<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>> KNOWN_TYPES = ImmutableMap.<ResourceLocation, FriendlyByteBuf.Reader<? extends CustomPacketPayload>>builder().build(); // CraftBukkit - no special handling
  
 +    /**
 +     * @deprecated Use {@link #ClientboundCustomPayloadPacket(FriendlyByteBuf, io.netty.channel.ChannelHandlerContext, net.minecraft.network.ConnectionProtocol)} instead, as this variant can only read vanilla payloads.

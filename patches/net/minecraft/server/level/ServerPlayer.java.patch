@@ -1255,8 +1255,8 @@
 +    }
 +
 +    // We need this as tablistDisplayname may be null even if the event was fired.
-+    private boolean hasTabListName = false;
-+    private Component tabListDisplayName = null;
++    public boolean hasTabListName = false; // Ketting - Convert to public
++    public Component tabListDisplayName = null; // Ketting - Covert to public
 +    /**
 +     * Force the name displayed in the tab list to refresh, by firing {@link net.neoforged.neoforge.event.entity.player.PlayerEvent.TabListNameFormat}.
 +     */
