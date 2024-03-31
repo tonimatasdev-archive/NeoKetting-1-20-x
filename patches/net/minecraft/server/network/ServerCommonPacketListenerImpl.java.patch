@@ -84,10 +84,12 @@
          boolean flag = !this.suspendFlushingOnServerThread || !this.server.isSameThread();
  
          try {
-@@ -122,10 +_,65 @@
+@@ -121,11 +_,66 @@
+             throw new ReportedException(crashreport);
          }
      }
- 
+-
++    
 +    // CraftBukkit start
      public void disconnect(Component p_294116_) {
 -        this.connection.send(new ClientboundDisconnectPacket(p_294116_), PacketSendListener.thenRun(() -> this.connection.disconnect(p_294116_)));

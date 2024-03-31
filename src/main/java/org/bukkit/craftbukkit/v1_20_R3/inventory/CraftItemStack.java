@@ -367,6 +367,7 @@ public final class CraftItemStack extends ItemStack {
         if (item == null) return meta;
         CompoundTag tag = item.getTag();
         if (tag != null) meta.offerUnhandledTags(tag);
+        
         meta.setForgeCaps(item.getForgeCaps());
         return meta;
         //Ketting end

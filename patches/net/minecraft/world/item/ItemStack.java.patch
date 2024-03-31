@@ -46,6 +46,27 @@
      @Nullable
      private CompoundTag tag;
      @Nullable
+@@ -153,6 +_,20 @@
+         return this.getItem().getTooltipImage(this);
+     }
+ 
++    //Ketting start
++    public CompoundTag getForgeCaps() {
++        return this.serializeAttachments();
++    }
++
++    public void setForgeCaps(CompoundTag caps) {
++        this.tag = caps;
++        if (this.tag.contains(ATTACHMENTS_NBT_KEY, Tag.TAG_COMPOUND)) {
++            deserializeAttachments(this.tag.getCompound(ATTACHMENTS_NBT_KEY));
++            this.tag = net.neoforged.neoforge.attachment.AttachmentInternals.cleanTag(this.tag);
++        }
++    }
++    //Ketting end
++
+     public ItemStack(ItemLike p_41599_) {
+         this(p_41599_, 1);
+     }
 @@ -162,18 +_,30 @@
      }
  
