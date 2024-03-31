@@ -1,14 +1,5 @@
 --- a/net/minecraft/network/protocol/game/ClientboundInitializeBorderPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundInitializeBorderPacket.java
-@@ -15,8 +_,6 @@
-     private final int warningTime;
- 
-     public ClientboundInitializeBorderPacket(FriendlyByteBuf p_178879_) {
--        this.newCenterX = p_178879_.readDouble();
--        this.newCenterZ = p_178879_.readDouble();
-         this.oldSize = p_178879_.readDouble();
-         this.newSize = p_178879_.readDouble();
-         this.lerpTime = p_178879_.readVarLong();
 @@ -26,8 +_,10 @@
      }
  

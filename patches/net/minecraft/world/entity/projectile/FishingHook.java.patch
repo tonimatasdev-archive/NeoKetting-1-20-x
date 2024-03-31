@@ -52,6 +52,17 @@
              --i;
          }
  
+@@ -296,6 +_,10 @@
+                 this.timeUntilLured = 0;
+                 this.timeUntilHooked = 0;
+                 this.getEntityData().set(DATA_BITING, false);
++                // CraftBukkit start
++                org.bukkit.event.player.PlayerFishEvent playerFishEvent = new org.bukkit.event.player.PlayerFishEvent((org.bukkit.entity.Player) this.getPlayerOwner().getBukkitEntity(), null, (org.bukkit.entity.FishHook) this.getBukkitEntity(), org.bukkit.event.player.PlayerFishEvent.State.FAILED_ATTEMPT);
++                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                // CraftBukkit end
+             }
+         } else if (this.timeUntilHooked > 0) {
+             this.timeUntilHooked -= i;
 @@ -319,6 +_,13 @@
                      serverlevel.sendParticles(ParticleTypes.FISHING, d0, d1, d2, 0, (double)(-f4), 0.01, (double)f3, 1.0);
                  }
@@ -66,17 +77,6 @@
                  this.playSound(SoundEvents.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                  double d3 = this.getY() + 0.5;
                  serverlevel.sendParticles(
-@@ -345,6 +_,10 @@
-                 );
-                 this.nibble = Mth.nextInt(this.random, 20, 40);
-                 this.getEntityData().set(DATA_BITING, true);
-+                // CraftBukkit start
-+                org.bukkit.event.player.PlayerFishEvent playerFishEvent = new org.bukkit.event.player.PlayerFishEvent((org.bukkit.entity.Player) this.getPlayerOwner().getBukkitEntity(), null, (org.bukkit.entity.FishHook) this.getBukkitEntity(), org.bukkit.event.player.PlayerFishEvent.State.FAILED_ATTEMPT);
-+                this.level().getCraftServer().getPluginManager().callEvent(playerFishEvent);
-+                // CraftBukkit end
-             }
-         } else if (this.timeUntilLured > 0) {
-             this.timeUntilLured -= i;
 @@ -370,12 +_,16 @@
              }
  
@@ -189,3 +189,12 @@
              return i;
          } else {
              return 0;
+@@ -562,7 +_,7 @@
+         }
+     }
+ 
+-    static enum FishHookState {
++    public static enum FishHookState { // Ketting - I don't know why accesstransformers don't work
+         FLYING,
+         HOOKED_IN_ENTITY,
+         BOBBING;

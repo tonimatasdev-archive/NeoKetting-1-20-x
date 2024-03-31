@@ -1,7 +1,7 @@
 package org.kettingpowered.ketting.adapters;
 
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.forgespi.language.IModInfo;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.IModInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.kettingpowered.ketting.adapter.ForgeAdapter;
@@ -58,7 +58,7 @@ public class ForgeAdapterImpl implements ForgeAdapter {
             final ModDependency modDependency = new ModDependency(
                     modId,
                     dependency.getVersionRange().toString(),
-                    dependency.isMandatory(),
+                    dependency.getType() == IModInfo.DependencyType.REQUIRED,
                     getDependencyOrdering(dependency.getOrdering()),
                     getDependencySide(dependency.getSide()),
                     owner

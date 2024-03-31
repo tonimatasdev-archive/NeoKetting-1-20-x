@@ -9,12 +9,12 @@
          this.mob.setTarget(this.mob.getLastHurtByMob());
          this.targetMob = this.mob.getTarget();
          this.timestamp = this.mob.getLastHurtByMobTimestamp();
-@@ -71,6 +_,8 @@
+@@ -112,6 +_,8 @@
      }
  
-     protected void alertOthers() {
+     protected void alertOther(Mob p_26042_, LivingEntity p_26043_) {
 +        p_26042_.ketting$setTarget$reason.set(org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_NEARBY_ENTITY);
 +        p_26042_.ketting$setTarget$fireEvent.set(true);
-         double d0 = this.getFollowDistance();
-         AABB aabb = AABB.unitCubeFromLowerCorner(this.mob.position()).inflate(d0, 10.0, d0);
-         List<? extends Mob> list = this.mob.level().getEntitiesOfClass(this.mob.getClass(), aabb, EntitySelector.NO_SPECTATORS);
+         p_26042_.setTarget(p_26043_);
+     }
+ }
