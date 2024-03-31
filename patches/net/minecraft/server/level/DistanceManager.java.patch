@@ -9,7 +9,43 @@
      protected DistanceManager(Executor p_140774_, Executor p_140775_) {
          ProcessorHandle<Runnable> processorhandle = ProcessorHandle.of("player ticket throttler", p_140775_::execute);
          ChunkTaskPriorityQueueSorter chunktaskpriorityqueuesorter = new ChunkTaskPriorityQueueSorter(ImmutableList.of(processorhandle), p_140774_, 4);
-@@ -152,6 +_,10 @@
+@@ -114,8 +_,25 @@
+         }
+ 
+         if (!this.chunksToUpdateFutures.isEmpty()) {
+-            this.chunksToUpdateFutures.forEach(p_183908_ -> p_183908_.updateFutures(p_140806_, this.mainThreadExecutor));
+-            this.chunksToUpdateFutures.clear();
++            // CraftBukkit start
++            // Iterate pending chunk updates with protection against concurrent modification exceptions
++
++            java.util.Iterator<ChunkHolder> iter = this.chunksToUpdateFutures.iterator();
++            int expectedSize = this.chunksToUpdateFutures.size();
++            do {
++                ChunkHolder playerchunk = iter.next();
++                iter.remove();
++                expectedSize--;
++
++                playerchunk.updateFutures(p_140806_, this.mainThreadExecutor);
++
++                // Reset iterator if set was modified using add()
++                if (this.chunksToUpdateFutures.size() != expectedSize) {
++                    expectedSize = this.chunksToUpdateFutures.size();
++                    iter = this.chunksToUpdateFutures.iterator();
++                }
++            } while (iter.hasNext());
++            // CraftBukkit end
+             return true;
+         } else {
+             if (!this.ticketsToRelease.isEmpty()) {
+@@ -144,6 +_,7 @@
+         }
+     }
+ 
++    public boolean ketting$addTicket$returnValue = false;
+     void addTicket(long p_140785_, Ticket<?> p_140786_) {
+         SortedArraySet<Ticket<?>> sortedarrayset = this.getTickets(p_140785_);
+         int i = getTicketLevelAt(sortedarrayset);
+@@ -152,11 +_,25 @@
          if (p_140786_.getTicketLevel() < i) {
              this.ticketTracker.update(p_140785_, p_140786_.getTicketLevel(), true);
          }
@@ -17,55 +53,138 @@
 +             SortedArraySet<Ticket<?>> tickets = forcedTickets.computeIfAbsent(p_140785_, e -> SortedArraySet.create(4));
 +             tickets.addOrGet(ticket);
 +        }
++
++        if (p_140786_.isForceTicks()) {
++            SortedArraySet<Ticket<?>> tickets = forcedTickets.computeIfAbsent(p_140785_, e -> SortedArraySet.create(4));
++            tickets.addOrGet(ticket);
++        }
++
++        ketting$addTicket$returnValue = (p_140786_ == ticket); // CraftBukkit
      }
  
++    public boolean ketting$removeTicket$returnValue = false;
      void removeTicket(long p_140819_, Ticket<?> p_140820_) {
-@@ -164,6 +_,13 @@
+         SortedArraySet<Ticket<?>> sortedarrayset = this.getTickets(p_140819_);
++        boolean removed = false; // CraftBukkit
+         if (sortedarrayset.remove(p_140820_)) {
++            removed = true; // CraftBukkit
+         }
+ 
+         if (sortedarrayset.isEmpty()) {
+@@ -164,6 +_,16 @@
          }
  
          this.ticketTracker.update(p_140819_, getTicketLevelAt(sortedarrayset), false);
 +
 +        if (p_140820_.isForceTicks()) {
-+             SortedArraySet<Ticket<?>> tickets = forcedTickets.get(p_140819_);
-+             if (tickets != null) {
-+                  tickets.remove(p_140820_);
-+             }
++            SortedArraySet<Ticket<?>> tickets = forcedTickets.get(p_140819_);
++            if (tickets != null) {
++                tickets.remove(p_140820_);
++                removed = true; // Ketting - forge compat
++            }
 +        }
++
++        ketting$removeTicket$returnValue = removed; // CraftBukkit
      }
  
      public <T> void addTicket(TicketType<T> p_140793_, ChunkPos p_140794_, int p_140795_, T p_140796_) {
-@@ -176,14 +_,20 @@
+@@ -175,18 +_,48 @@
+         this.removeTicket(p_140825_.toLong(), ticket);
      }
  
++    public boolean ketting$addRegionTicket$forceTicks; //Ketting
      public <T> void addRegionTicket(TicketType<T> p_140841_, ChunkPos p_140842_, int p_140843_, T p_140844_) {
 -        Ticket<T> ticket = new Ticket<>(p_140841_, ChunkLevel.byStatus(FullChunkStatus.FULL) - p_140843_, p_140844_);
-+        addRegionTicket(p_140841_, p_140842_, p_140843_, p_140844_, false);
-+    }
-+    public <T> void addRegionTicket(TicketType<T> p_140841_, ChunkPos p_140842_, int p_140843_, T p_140844_, boolean forceTicks) {
-+        Ticket<T> ticket = new Ticket<>(p_140841_, ChunkLevel.byStatus(FullChunkStatus.FULL) - p_140843_, p_140844_, forceTicks);
-         long i = p_140842_.toLong();
-         this.addTicket(i, ticket);
-         this.tickingTicketsTracker.addTicket(i, ticket);
-     }
- 
-     public <T> void removeRegionTicket(TicketType<T> p_140850_, ChunkPos p_140851_, int p_140852_, T p_140853_) {
--        Ticket<T> ticket = new Ticket<>(p_140850_, ChunkLevel.byStatus(FullChunkStatus.FULL) - p_140852_, p_140853_);
-+        removeRegionTicket(p_140850_, p_140851_, p_140852_, p_140853_, false);
-+    }
-+    public <T> void removeRegionTicket(TicketType<T> p_140850_, ChunkPos p_140851_, int p_140852_, T p_140853_, boolean forceTicks) {
-+        Ticket<T> ticket = new Ticket<>(p_140850_, ChunkLevel.byStatus(FullChunkStatus.FULL) - p_140852_, p_140853_, forceTicks);
-         long i = p_140851_.toLong();
-         this.removeTicket(i, ticket);
-         this.tickingTicketsTracker.removeTicket(i, ticket);
-@@ -267,6 +_,11 @@
- 
-     public String getDebugStatus() {
-         return this.ticketThrottler.getDebugStatus();
++        // CraftBukkit start
++        addRegionTicketAtDistance(p_140841_, p_140842_, p_140843_, p_140844_);
 +    }
 +
++    public <T> boolean addRegionTicketAtDistance(TicketType<T> p_140841_, ChunkPos p_140842_, int p_140843_, T p_140844_) {
++        // CraftBukkit end
++        Ticket<T> ticket = new Ticket<>(p_140841_, ChunkLevel.byStatus(FullChunkStatus.FULL) - p_140843_, p_140844_, ketting$addRegionTicket$forceTicks); //Ketting
+         long i = p_140842_.toLong();
+         this.addTicket(i, ticket);
++        boolean added = ketting$addTicket$returnValue;
+         this.tickingTicketsTracker.addTicket(i, ticket);
+-    }
+-
++        return added; // CraftBukkit
++    }
++
++    public <T> void addRegionTicket(TicketType<T> p_140841_, ChunkPos p_140842_, int p_140843_, T p_140844_, boolean forceTicks) {
++        ketting$addRegionTicket$forceTicks = forceTicks; //Ketting
++        addRegionTicket(p_140841_, p_140842_, p_140843_, p_140844_);
++        ketting$addRegionTicket$forceTicks = false; //Ketting
++    }
++
++    public boolean ketting$removeRegionTicket$forceTicks; //Ketting
+     public <T> void removeRegionTicket(TicketType<T> p_140850_, ChunkPos p_140851_, int p_140852_, T p_140853_) {
+-        Ticket<T> ticket = new Ticket<>(p_140850_, ChunkLevel.byStatus(FullChunkStatus.FULL) - p_140852_, p_140853_);
++        // CraftBukkit start
++        removeRegionTicketAtDistance(p_140850_, p_140851_, p_140852_, p_140853_);
++    }
++
++    public <T> boolean removeRegionTicketAtDistance(TicketType<T> p_140850_, ChunkPos p_140851_, int p_140852_, T p_140853_) {
++        // CraftBukkit end
++        Ticket<T> ticket = new Ticket<>(p_140850_, ChunkLevel.byStatus(FullChunkStatus.FULL) - p_140852_, p_140853_, ketting$removeRegionTicket$forceTicks); //Ketting
+         long i = p_140851_.toLong();
+         this.removeTicket(i, ticket);
++        boolean removed = ketting$removeTicket$returnValue;
+         this.tickingTicketsTracker.removeTicket(i, ticket);
++        return removed; // CraftBukkit
++    }
++
++    public <T> void removeRegionTicket(TicketType<T> p_140850_, ChunkPos p_140851_, int p_140852_, T p_140853_, boolean forceTicks) {
++        ketting$removeRegionTicket$forceTicks = forceTicks; //Ketting
++        removeRegionTicket(p_140850_, p_140851_, p_140852_, p_140853_);
++        ketting$removeRegionTicket$forceTicks = false; //Ketting
+     }
+ 
+     private SortedArraySet<Ticket<?>> getTickets(long p_140858_) {
+@@ -218,6 +_,7 @@
+         ChunkPos chunkpos = p_140829_.chunk();
+         long i = chunkpos.toLong();
+         ObjectSet<ServerPlayer> objectset = this.playersPerChunk.get(i);
++        if (objectset == null) return; // CraftBukkit - SPIGOT-6208
+         objectset.remove(p_140830_);
+         if (objectset.isEmpty()) {
+             this.playersPerChunk.remove(i);
+@@ -269,6 +_,11 @@
+         return this.ticketThrottler.getDebugStatus();
+     }
+ 
 +    public boolean shouldForceTicks(long chunkPos) {
 +         SortedArraySet<Ticket<?>> tickets = forcedTickets.get(chunkPos);
 +         return tickets != null && !tickets.isEmpty();
-     }
- 
++    }
++
      private void dumpTickets(String p_143208_) {
+         try (FileOutputStream fileoutputstream = new FileOutputStream(new File(p_143208_))) {
+             for(Entry<SortedArraySet<Ticket<?>>> entry : this.tickets.long2ObjectEntrySet()) {
+@@ -321,6 +_,26 @@
+     public boolean hasTickets() {
+         return !this.tickets.isEmpty();
+     }
++
++    // CraftBukkit start
++    public <T> void removeAllTicketsFor(TicketType<T> ticketType, int ticketLevel, T ticketIdentifier) {
++        Ticket<T> target = new Ticket<>(ticketType, ticketLevel, ticketIdentifier);
++
++        for (java.util.Iterator<Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>>> iterator = this.tickets.long2ObjectEntrySet().fastIterator(); iterator.hasNext();) {
++            Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> entry = iterator.next();
++            SortedArraySet<Ticket<?>> tickets = entry.getValue();
++            if (tickets.remove(target)) {
++                // copied from removeTicket
++                this.ticketTracker.update(entry.getLongKey(), getTicketLevelAt(tickets), false);
++
++                // can't use entry after it's removed
++                if (tickets.isEmpty()) {
++                    iterator.remove();
++                }
++            }
++        }
++    }
++    // CraftBukkit end
+ 
+     class ChunkTicketTracker extends ChunkTracker {
+         private static final int MAX_LEVEL = ChunkLevel.MAX_LEVEL + 1;

@@ -1,5 +1,67 @@
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
+@@ -137,6 +_,41 @@
+     private final Queue<Runnable> unloadQueue = Queues.newConcurrentLinkedQueue();
+     private int serverViewDistance;
+ 
++    // CraftBukkit start - recursion-safe executor for Chunk loadCallback() and unloadCallback()
++    public final CallbackExecutor callbackExecutor = new CallbackExecutor();
++    public static final class CallbackExecutor implements java.util.concurrent.Executor, Runnable {
++
++        private final java.util.Queue<Runnable> queue = new java.util.ArrayDeque<>();
++
++        @Override
++        public void execute(Runnable runnable) {
++            queue.add(runnable);
++        }
++
++        @Override
++        public void run() {
++            Runnable task;
++            while ((task = queue.poll()) != null) {
++                task.run();
++            }
++        }
++    };
++    // CraftBukkit end
++
++    //Ketting start
++    public void setChunkGenerator(ChunkGenerator generator) {
++        this.generator = generator;
++        if (generator instanceof org.bukkit.craftbukkit.v1_20_R3.generator.CustomChunkGenerator custom) {
++            generator = custom.getDelegate();
++        }
++        if (generator instanceof NoiseBasedChunkGenerator noisebasedchunkgenerator) {
++            this.randomState = RandomState.create(noisebasedchunkgenerator.generatorSettings().value(), this.level.registryAccess().lookupOrThrow(Registries.NOISE), this.level.getSeed());
++        } else {
++            this.randomState = RandomState.create(NoiseGeneratorSettings.dummy(), this.level.registryAccess().lookupOrThrow(Registries.NOISE), this.level.getSeed());
++        }
++    }
++    //Ketting end
++
+     public ChunkMap(
+         ServerLevel p_214836_,
+         LevelStorageSource.LevelStorageAccess p_214837_,
+@@ -158,6 +_,11 @@
+         this.storageName = path.getFileName().toString();
+         this.level = p_214836_;
+         this.generator = p_214843_;
++        // CraftBukkit start - SPIGOT-7051: It's a rigged game! Use delegate for random state creation, otherwise it is not so random.
++        if (p_214843_ instanceof org.bukkit.craftbukkit.v1_20_R3.generator.CustomChunkGenerator) {
++            p_214843_ = ((org.bukkit.craftbukkit.v1_20_R3.generator.CustomChunkGenerator) p_214843_).getDelegate();
++        }
++        // CraftBukkit end
+         RegistryAccess registryaccess = p_214836_.registryAccess();
+         long i = p_214836_.getSeed();
+         if (p_214843_ instanceof NoiseBasedChunkGenerator noisebasedchunkgenerator) {
+@@ -166,6 +_,7 @@
+             this.randomState = RandomState.create(NoiseGeneratorSettings.dummy(), registryaccess.lookupOrThrow(Registries.NOISE), i);
+         }
+ 
++        p_214843_.ketting$createState$conf.set(p_214836_.spigotConfig); //Ketting
+         this.chunkGeneratorState = p_214843_.createState(registryaccess.lookupOrThrow(Registries.STRUCTURE_SET), this.randomState, i);
+         this.mainThreadExecutor = p_214841_;
+         ProcessorMailbox<Runnable> processormailbox1 = ProcessorMailbox.create(p_214840_, "worldgen");
 @@ -414,6 +_,7 @@
                  this.modified = true;
              }
@@ -16,6 +78,32 @@
                      }
  
                      this.save(p_203002_);
+@@ -715,7 +_,24 @@
+ 
+     private static void postLoadProtoChunk(ServerLevel p_143065_, List<CompoundTag> p_143066_) {
+         if (!p_143066_.isEmpty()) {
+-            p_143065_.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(p_143066_, p_143065_));
++            // CraftBukkit start - these are spawned serialized (DefinedStructure) and we don't call an add event below at the moment due to ordering complexities
++            p_143065_.addWorldGenChunkEntities(EntityType.loadEntitiesRecursive(p_143066_, p_143065_).filter(new java.util.function.Predicate<Entity>() { // Ketting - Remove the lambda for fix mixin issues
++                @Override
++                public boolean test(Entity entity) {
++                    boolean needsRemoval = false;
++                    net.minecraft.server.dedicated.DedicatedServer server = p_143065_.getCraftServer().getServer();
++                    if (!server.areNpcsEnabled() && entity instanceof net.minecraft.world.entity.npc.Npc) {
++                        entity.discard();
++                        needsRemoval = true;
++                    }
++                    if (!server.isSpawningAnimals() && (entity instanceof net.minecraft.world.entity.animal.Animal || entity instanceof net.minecraft.world.entity.animal.WaterAnimal)) {
++                        entity.discard();
++                        needsRemoval = true;
++                    }
++                    return !needsRemoval;
++                }
++            }));
++            // CraftBukkit end
+         }
+     }
+ 
 @@ -737,11 +_,22 @@
                  }
  
@@ -59,6 +147,79 @@
          p_294215_.connection.chunkSender.dropChunk(p_294215_, p_294758_);
      }
  
+@@ -988,19 +_,48 @@
+     }
+ 
+     private CompletableFuture<Optional<CompoundTag>> readChunk(ChunkPos p_214964_) {
+-        return this.read(p_214964_).thenApplyAsync(p_214907_ -> p_214907_.map(this::upgradeChunkTag), Util.backgroundExecutor());
++        return this.read(p_214964_).thenApplyAsync((p_214907_) -> {
++            return p_214907_.map(new java.util.function.Function<CompoundTag, CompoundTag>() { // Ketting - Remove the lambda for fix mixin issues
++                @Override
++                public CompoundTag apply(CompoundTag compoundTag) {
++                    return upgradeChunkTag(compoundTag, p_214964_);
++                }
++            }); // CraftBukkit
++        }, Util.backgroundExecutor());
+     }
+ 
++    // CraftBukkit start
++    public java.util.concurrent.atomic.AtomicReference<ChunkPos> ketting$upgradeChunkTag$pos = new java.util.concurrent.atomic.AtomicReference<>(null);
++    private CompoundTag upgradeChunkTag(CompoundTag p_214948_, ChunkPos pos) {
++        ketting$upgradeChunkTag$pos.set(pos);
++        return upgradeChunkTag(p_214948_);
++    }
+     private CompoundTag upgradeChunkTag(CompoundTag p_214948_) {
+-        return this.upgradeChunkTag(this.level.dimension(), this.overworldDataStorage, p_214948_, this.generator.getTypeNameForDataFixer());
+-    }
++        return this.upgradeChunkTag(this.level.getTypeKey(), this.overworldDataStorage, p_214948_, this.generator.getTypeNameForDataFixer(), ketting$upgradeChunkTag$pos.getAndSet(null), level);
++        // CraftBukkit end
++    }
++
++    //Ketting start
++    public java.util.concurrent.atomic.AtomicBoolean ketting$anyPlayerCloseEnoughForSpawning$reducedRange = new java.util.concurrent.atomic.AtomicBoolean(false);
++    boolean anyPlayerCloseEnoughForSpawning(ChunkPos p_183880_, boolean reducedRange) {
++        ketting$anyPlayerCloseEnoughForSpawning$reducedRange.set(reducedRange);
++        // Spigot start
++        return anyPlayerCloseEnoughForSpawning(p_183880_);
++    }
++    //Ketting end
+ 
+     boolean anyPlayerCloseEnoughForSpawning(ChunkPos p_183880_) {
++        int chunkRange = level.spigotConfig.mobSpawnRange;
++        chunkRange = (chunkRange > level.spigotConfig.viewDistance) ? (byte) level.spigotConfig.viewDistance : chunkRange;
++        chunkRange = (chunkRange > 8) ? 8 : chunkRange;
++
++        double blockRange = (ketting$anyPlayerCloseEnoughForSpawning$reducedRange.getAndSet(false)) ? Math.pow(chunkRange << 4, 2) : 16384.0D;
++        // Spigot end
+         if (!this.distanceManager.hasPlayersNearby(p_183880_.toLong())) {
+             return false;
+         } else {
+             for(ServerPlayer serverplayer : this.playerMap.getAllPlayers()) {
+-                if (this.playerIsCloseEnoughForSpawning(serverplayer, p_183880_)) {
++                if (this.playerIsCloseEnoughForSpawning(serverplayer, p_183880_, blockRange)) { // Spigot
+                     return true;
+                 }
+             }
+@@ -1026,12 +_,18 @@
+         }
+     }
+ 
++    public final java.util.concurrent.atomic.AtomicReference<java.lang.Double> ketting$playerIsCloseEnoughForSpawning$range = new java.util.concurrent.atomic.AtomicReference<>(16384.0D);
++    private boolean playerIsCloseEnoughForSpawning(ServerPlayer p_183752_, ChunkPos p_183753_, double range) {
++        ketting$playerIsCloseEnoughForSpawning$range.set(range);
++        return playerIsCloseEnoughForSpawning(p_183752_, p_183753_);
++    }
+     private boolean playerIsCloseEnoughForSpawning(ServerPlayer p_183752_, ChunkPos p_183753_) {
+         if (p_183752_.isSpectator()) {
++            ketting$playerIsCloseEnoughForSpawning$range.set(16384.0D);
+             return false;
+         } else {
+             double d0 = euclideanDistanceSquared(p_183753_, p_183752_);
+-            return d0 < 16384.0;
++            return d0 < java.util.Objects.requireNonNullElse(ketting$playerIsCloseEnoughForSpawning$range.getAndSet(16384.0D), 16384.0D); // Ketting - Spigot
+         }
+     }
+ 
 @@ -1099,6 +_,7 @@
                  this.playerMap.unIgnorePlayer(p_140185_);
              }
@@ -67,15 +228,27 @@
              this.updateChunkTracking(p_140185_);
          }
      }
-@@ -1151,7 +_,7 @@
+@@ -1151,9 +_,11 @@
      }
  
      protected void addEntity(Entity p_140200_) {
 -        if (!(p_140200_ instanceof EnderDragonPart)) {
++        org.spigotmc.AsyncCatcher.catchOp("entity track"); // Spigot
 +        if (!(p_140200_ instanceof net.neoforged.neoforge.entity.PartEntity)) {
              EntityType<?> entitytype = p_140200_.getType();
              int i = entitytype.clientTrackingRange() * 16;
++            i = org.spigotmc.TrackingRange.getEntityTrackingRange(p_140200_, i); // Spigot
              if (i != 0) {
+                 int j = entitytype.updateInterval();
+                 if (this.entityMap.containsKey(p_140200_.getId())) {
+@@ -1177,6 +_,7 @@
+     }
+ 
+     protected void removeEntity(Entity p_140332_) {
++        org.spigotmc.AsyncCatcher.catchOp("entity untrack"); // Spigot
+         if (p_140332_ instanceof ServerPlayer serverplayer) {
+             this.updatePlayerStatus(serverplayer, false);
+ 
 @@ -1281,7 +_,7 @@
          });
      }
@@ -94,3 +267,38 @@
          final ServerEntity serverEntity;
          final Entity entity;
          private final int range;
+@@ -1312,6 +_,7 @@
+         public final Set<ServerPlayerConnection> seenBy = Sets.newIdentityHashSet();
+ 
+         public TrackedEntity(Entity p_140478_, int p_140479_, int p_140480_, boolean p_140481_) {
++            ServerEntity.init$trackedPlayers = seenBy; // CraftBukkit // Ketting
+             this.serverEntity = new ServerEntity(ChunkMap.this.level, p_140478_, p_140480_, p_140481_, this::broadcast);
+             this.entity = p_140478_;
+             this.range = p_140479_;
+@@ -1352,12 +_,14 @@
+         }
+ 
+         public void removePlayer(ServerPlayer p_140486_) {
++            org.spigotmc.AsyncCatcher.catchOp("player tracker clear"); // Spigot
+             if (this.seenBy.remove(p_140486_.connection)) {
+                 this.serverEntity.removePairing(p_140486_);
+             }
+         }
+ 
+         public void updatePlayer(ServerPlayer p_140498_) {
++            org.spigotmc.AsyncCatcher.catchOp("player tracker update"); // Spigot
+             if (p_140498_ != this.entity) {
+                 Vec3 vec3 = p_140498_.position().subtract(this.entity.position());
+                 int i = ChunkMap.this.getPlayerViewDistance(p_140498_);
+@@ -1367,6 +_,11 @@
+                 boolean flag = d1 <= d2
+                     && this.entity.broadcastToPlayer(p_140498_)
+                     && ChunkMap.this.isChunkTracked(p_140498_, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
++                // CraftBukkit start - respect vanish API
++                if (!p_140498_.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
++                    flag = false;
++                }
++                // CraftBukkit end
+                 if (flag) {
+                     if (this.seenBy.add(p_140498_.connection)) {
+                         this.serverEntity.addPairing(p_140498_);
