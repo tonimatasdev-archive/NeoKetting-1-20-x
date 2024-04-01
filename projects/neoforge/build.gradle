@@ -189,7 +189,7 @@ tasks.register('kettingJar', Jar) {
         exclude "META-INF/*.DSA"
         exclude "META-INF/*.RSA"
     }
-    //from(installerJson.output) {
+    //from(createLegacyInstallerJson.output) {
     //    rename { 'data/forge-' + MC_VERSION + '-' + FORGE_VERSION + '-' + KETTING_VERSION + '-installscript.json' }
     //}
 
@@ -199,9 +199,9 @@ tasks.register('kettingJar', Jar) {
     //    }
     //}
 
-    //from(genServerBinPatches.output) {
-    //    rename { 'data/server.lzma' }
-    //}
+    from(generateServerBinaryPatches.output) {
+        rename { 'data/server.lzma' }
+    }
 
     from(universalJar) {
         rename { 'data/forge-' + MC_VERSION + '-' + FORGE_VERSION + '-' + KETTING_VERSION + '-universal.jar' }
