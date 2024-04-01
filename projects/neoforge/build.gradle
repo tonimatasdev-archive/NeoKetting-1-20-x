@@ -31,6 +31,11 @@ sourceSets {
         }
     }
 }
+configurations{
+    kettinglauncher{
+        transitive = false
+    }
+}
 
 dependencies {
     runtimeOnly "cpw.mods:bootstraplauncher:${project.bootstraplauncher_version}"
@@ -85,7 +90,7 @@ dependencies {
     // Ketting start
     installer("org.kettingpowered:kettingcore:1.3")
     installer("org.kettingpowered:kettingcommon:2.3.2")
-    installer("org.kettingpowered:kettinglauncher:1.3.3")
+    kettinglauncher("org.kettingpowered:kettinglauncher:1.3.3")
     installer("org.kettingpowered:terminal-colors:1.0.2")
     installer("org.yaml:snakeyaml:2.2")
     installer("org.apache.logging.log4j:log4j-iostreams:2.19.0")
@@ -141,6 +146,62 @@ dependencies {
         jarJar.ranged(it, "[${project.mixin_extras_version},)")
     }
 }
+
+//Ketting start
+org.kettingpowered.task.GenerateLibs.init();
+tasks.register('generateKettingLibraries', org.kettingpowered.task.GenerateLibs) {}
+
+tasks.register('kettingJar', Jar) {
+    archiveExtension = 'jar'
+    archiveBaseName = 'ketting'
+    archiveClassifier = 'kettingJar'
+    manifest{
+        attributes 'Main-Class': 'org.kettingpowered.launcher.Main'
+        attributes 'Launcher-Agent-Class': 'org.kettingpowered.launcher.Main'
+        attributes 'Automatic-Module-Name': 'org.kettingpowered.kettinglauncher'
+        attributes 'Bundled': 'true'
+        attributes 'MinecraftVersion': minecraft_version
+        attributes 'ForgeVersion': neo_version
+        attributes 'KettingVersion': ketting_version
+        attributes([
+                "Specification-Title": "Kettingpowered",
+                "Specification-Vendor": "Kettingpowered",
+                "Implementation-Title": "Ketting",
+                "Implementation-Version": "dev-env",
+                "Implementation-Vendor": "Kettingpowered",
+        ], "org/kettingpowered/launcher/")
+    }
+    mustRunAfter ':setup'
+
+    from(generateKettingLibraries) {
+        rename {'data/ketting_libraries.txt'}
+    }
+    from {
+        configurations.kettinglauncher.collect { it.isDirectory() ? it : zipTree(it) }
+    } {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+    //from(installerJson.output) {
+    //    rename { 'data/forge-' + MC_VERSION + '-' + FORGE_VERSION + '-' + KETTING_VERSION + '-installscript.json' }
+    //}
+
+    //BUNDLED_PROJECTS.each { dep ->
+    //    from(project(dep).tasks.jar.outputs) {
+    //        rename { "data/${dep.substring(1)}-${MC_VERSION}-${FORGE_VERSION}-${KETTING_VERSION}.jar" } //substring with 1 to remove :
+    //    }
+    //}
+
+    //from(genServerBinPatches.output) {
+    //    rename { 'data/server.lzma' }
+    //}
+
+    from(universalJar) {
+        rename { 'data/forge-' + MC_VERSION + '-' + FORGE_VERSION + '-' + KETTING_VERSION + '-universal.jar' }
+    }
+}
+//Ketting end
 
 runTypes {
     client {
