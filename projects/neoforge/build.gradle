@@ -147,6 +147,12 @@ dependencies {
     }
 }
 
+ext {
+    MC_VERSION = "1.20.4"
+    FORGE_VERSION = "20.4.214"
+    KETTING_VERSION = "0.0.0"
+}
+
 //Ketting start
 org.kettingpowered.task.GenerateLibs.init();
 tasks.register('generateKettingLibraries', org.kettingpowered.task.GenerateLibs) {}
@@ -161,8 +167,8 @@ tasks.register('kettingJar', Jar) {
         attributes 'Automatic-Module-Name': 'org.kettingpowered.kettinglauncher'
         attributes 'Bundled': 'true'
         attributes 'MinecraftVersion': minecraft_version
-        attributes 'ForgeVersion': neo_version
-        attributes 'KettingVersion': ketting_version
+        attributes 'ForgeVersion': FORGE_VERSION
+        attributes 'KettingVersion': KETTING_VERSION
         attributes([
                 "Specification-Title": "Kettingpowered",
                 "Specification-Vendor": "Kettingpowered",
