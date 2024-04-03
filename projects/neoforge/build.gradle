@@ -189,9 +189,9 @@ tasks.register('kettingJar', Jar) {
         exclude "META-INF/*.DSA"
         exclude "META-INF/*.RSA"
     }
-    //from(createLegacyInstallerJson.output) {
-    //    rename { 'data/forge-' + MC_VERSION + '-' + FORGE_VERSION + '-' + KETTING_VERSION + '-installscript.json' }
-    //}
+    from(createLegacyInstallerJson.output) {
+        rename { 'data/forge-' + MC_VERSION + '-' + FORGE_VERSION + '-' + KETTING_VERSION + '-installscript.json' }
+    }
 
     //BUNDLED_PROJECTS.each { dep ->
     //    from(project(dep).tasks.jar.outputs) {
